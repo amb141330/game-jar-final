@@ -13,7 +13,6 @@ import {
   parseThingXML,
 } from '@/lib/gameStore';
 
-// Book colors for the shelf
 const bookColors = [
   '#E8A0BF', '#D4728C', '#9B4D6E', '#C9A96E', '#7BAACC',
   '#A5C8A1', '#D4A0D9', '#E8C87B', '#8BBDD9', '#C49898',
@@ -33,71 +32,93 @@ function generateShelfBooks(count) {
   return books;
 }
 
-// Cute kitty SVG component
-function KittyCharacter() {
+/*
+ * Meeple-Cat: classic board game meeple silhouette, but white with cat ears + pink bow.
+ * Inspired by reference image — minimal kawaii face (dot eyes, gold nose, whiskers, blush).
+ */
+function MeepleCharacter() {
   return (
-    <div className="kitty-character">
-      <svg className="kitty-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Ears */}
-        <polygon points="18,28 10,8 30,22" fill="#FFF" stroke="#333" strokeWidth="2"/>
-        <polygon points="62,28 70,8 50,22" fill="#FFF" stroke="#333" strokeWidth="2"/>
-        <polygon points="18,28 13,12 28,22" fill="#FFB6C1" strokeWidth="0"/>
-        <polygon points="62,28 67,12 52,22" fill="#FFB6C1" strokeWidth="0"/>
-        {/* Head */}
-        <ellipse cx="40" cy="42" rx="28" ry="25" fill="#FFF" stroke="#333" strokeWidth="2"/>
-        {/* Eyes */}
-        <ellipse cx="30" cy="40" rx="3" ry="3.5" fill="#333"/>
-        <ellipse cx="50" cy="40" rx="3" ry="3.5" fill="#333"/>
-        <ellipse cx="31" cy="39" rx="1" ry="1" fill="#FFF"/>
-        <ellipse cx="51" cy="39" rx="1" ry="1" fill="#FFF"/>
-        {/* Nose */}
-        <ellipse cx="40" cy="46" rx="2.5" ry="2" fill="#FFB6C1"/>
-        {/* Whiskers */}
-        <line x1="12" y1="42" x2="26" y2="44" stroke="#333" strokeWidth="1.5"/>
-        <line x1="12" y1="48" x2="26" y2="47" stroke="#333" strokeWidth="1.5"/>
-        <line x1="54" y1="44" x2="68" y2="42" stroke="#333" strokeWidth="1.5"/>
-        <line x1="54" y1="47" x2="68" y2="48" stroke="#333" strokeWidth="1.5"/>
-        {/* Mouth */}
-        <path d="M37 49 Q40 52 43 49" stroke="#333" strokeWidth="1.5" fill="none"/>
-        {/* Bow */}
-        <circle cx="20" cy="28" r="5" fill="#FF6B8A"/>
-        <circle cx="20" cy="28" r="2" fill="#E8405A"/>
-        <ellipse cx="15" cy="27" rx="4" ry="3" fill="#FF6B8A"/>
-        <ellipse cx="25" cy="27" rx="4" ry="3" fill="#FF6B8A"/>
-        {/* Blush */}
-        <ellipse cx="24" cy="48" rx="4" ry="2.5" fill="#FFB6C1" opacity="0.4"/>
-        <ellipse cx="56" cy="48" rx="4" ry="2.5" fill="#FFB6C1" opacity="0.4"/>
-      </svg>
+    <div className="meeple-character">
+      <div className="meeple-inner">
+        <svg className="meeple-svg" viewBox="0 0 70 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Cat ears - sit on top of meeple head */}
+          <path d="M20 22 L14 6 L28 18 Z" fill="#FFFBF0" stroke="#3A3030" strokeWidth="2" strokeLinejoin="round"/>
+          <path d="M50 22 L56 6 L42 18 Z" fill="#FFFBF0" stroke="#3A3030" strokeWidth="2" strokeLinejoin="round"/>
+          {/* Inner ear pink */}
+          <path d="M20 21 L16 10 L27 18 Z" fill="#FFB6C1" opacity="0.6"/>
+          <path d="M50 21 L54 10 L43 18 Z" fill="#FFB6C1" opacity="0.6"/>
+
+          {/* Meeple body - classic shape: round head, arms out, base */}
+          <path d="
+            M35 14
+            C27 14 22 19 22 26
+            C22 31 24 34 26 36
+            L10 46
+            C7 48 7 52 10 54
+            L14 56
+            L14 74
+            C14 77 17 79 20 79
+            L50 79
+            C53 79 56 77 56 74
+            L56 56
+            L60 54
+            C63 52 63 48 60 46
+            L44 36
+            C46 34 48 31 48 26
+            C48 19 43 14 35 14 Z
+          " fill="#FFFBF0" stroke="#3A3030" strokeWidth="2.5" strokeLinejoin="round"/>
+
+          {/* Eyes - small ovals like reference */}
+          <ellipse cx="29" cy="27" rx="2.5" ry="3" fill="#3A3030"/>
+          <ellipse cx="41" cy="27" rx="2.5" ry="3" fill="#3A3030"/>
+          {/* Eye highlights */}
+          <circle cx="30" cy="26" r="0.9" fill="white"/>
+          <circle cx="42" cy="26" r="0.9" fill="white"/>
+
+          {/* Nose - tiny gold oval like reference */}
+          <ellipse cx="35" cy="32" rx="2" ry="1.5" fill="#E8B84A"/>
+
+          {/* Whiskers */}
+          <line x1="10" y1="30" x2="24" y2="31" stroke="#3A3030" strokeWidth="1.2" strokeLinecap="round"/>
+          <line x1="10" y1="34" x2="24" y2="33" stroke="#3A3030" strokeWidth="1.2" strokeLinecap="round"/>
+          <line x1="10" y1="26" x2="24" y2="29" stroke="#3A3030" strokeWidth="1.2" strokeLinecap="round"/>
+          <line x1="46" y1="31" x2="60" y2="30" stroke="#3A3030" strokeWidth="1.2" strokeLinecap="round"/>
+          <line x1="46" y1="33" x2="60" y2="34" stroke="#3A3030" strokeWidth="1.2" strokeLinecap="round"/>
+          <line x1="46" y1="29" x2="60" y2="26" stroke="#3A3030" strokeWidth="1.2" strokeLinecap="round"/>
+
+          {/* Blush */}
+          <ellipse cx="23" cy="34" rx="4" ry="2.5" fill="#FFB6C1" opacity="0.3"/>
+          <ellipse cx="47" cy="34" rx="4" ry="2.5" fill="#FFB6C1" opacity="0.3"/>
+
+          {/* Bow - polka dot pink, on right ear */}
+          <ellipse cx="51" cy="13" rx="6" ry="4" fill="#FF6B8A" transform="rotate(-10 51 13)"/>
+          <ellipse cx="59" cy="11" rx="6" ry="4" fill="#FF6B8A" transform="rotate(10 59 11)"/>
+          <circle cx="55" cy="12" r="3" fill="#E8405A"/>
+          {/* Polka dots on bow */}
+          <circle cx="49" cy="12" r="1" fill="white" opacity="0.65"/>
+          <circle cx="52" cy="15" r="0.8" fill="white" opacity="0.65"/>
+          <circle cx="58" cy="10" r="1" fill="white" opacity="0.65"/>
+          <circle cx="61" cy="13" r="0.8" fill="white" opacity="0.65"/>
+        </svg>
+        <div className="meeple-shadow" />
+      </div>
     </div>
   );
 }
 
 function ShelfBackground() {
-  const shelves = useMemo(() => {
-    return [
-      generateShelfBooks(40),
-      generateShelfBooks(40),
-      generateShelfBooks(40),
-      generateShelfBooks(40),
-    ];
-  }, []);
+  const shelves = useMemo(() => [
+    generateShelfBooks(40), generateShelfBooks(40),
+    generateShelfBooks(40), generateShelfBooks(40),
+  ], []);
 
   return (
     <div className="shelf-bg" aria-hidden="true">
       {shelves.map((books, rowIdx) => (
         <div key={rowIdx} className={`shelf-row shelf-row-${rowIdx + 1}`}>
-          {/* Double the books for seamless loop */}
           {[...books, ...books].map((book, bookIdx) => (
-            <div
-              key={bookIdx}
-              className="shelf-book"
-              style={{
-                backgroundColor: book.color,
-                height: `${book.height}px`,
-                width: `${book.width}px`,
-                opacity: 0.5,
-              }}
-            />
+            <div key={bookIdx} className="shelf-book"
+              style={{ backgroundColor: book.color, height: `${book.height}px`, width: `${book.width}px`, opacity: 0.5 }} />
           ))}
         </div>
       ))}
@@ -121,30 +142,18 @@ export default function ImportPage() {
     setFavorites(getFavorites());
   }, []);
 
-  // BGG Import
   const fetchCollection = async () => {
     if (!username.trim()) return;
-    setLoading(true);
-    setError('');
-    setProgress(0);
+    setLoading(true); setError(''); setProgress(0);
     setLoadingStatus('Reaching out to BoardGameGeek...');
-
     try {
       const collRes = await fetch(`/api/bgg/collection?username=${encodeURIComponent(username.trim())}`);
-      if (!collRes.ok) {
-        const err = await collRes.json();
-        throw new Error(err.error || 'Failed to load collection');
-      }
-
-      setProgress(30);
-      setLoadingStatus('Parsing your games...');
+      if (!collRes.ok) { const err = await collRes.json(); throw new Error(err.error || 'Failed'); }
+      setProgress(30); setLoadingStatus('Parsing your games...');
       const xmlText = await collRes.text();
       let parsedGames = parseCollectionXML(xmlText);
       if (parsedGames.length === 0) throw new Error('No games found. Is the collection public?');
-
-      setProgress(50);
-      setLoadingStatus(`Found ${parsedGames.length} games! Loading details...`);
-
+      setProgress(50); setLoadingStatus(`Found ${parsedGames.length} games! Loading details...`);
       const batchSize = 20;
       const totalBatches = Math.ceil(parsedGames.length / batchSize);
       for (let i = 0; i < totalBatches; i++) {
@@ -155,31 +164,23 @@ export default function ImportPage() {
           if (thingRes.ok) {
             const thingXml = await thingRes.text();
             const details = parseThingXML(thingXml);
-            parsedGames = parsedGames.map(game =>
-              details[game.id] ? { ...game, tags: details[game.id].tags } : game
-            );
+            parsedGames = parsedGames.map(g => details[g.id] ? { ...g, tags: details[g.id].tags } : g);
           }
         } catch {}
         setProgress(50 + ((i + 1) / totalBatches) * 45);
         setLoadingStatus(`Loading details... (${Math.min((i + 1) * batchSize, parsedGames.length)}/${parsedGames.length})`);
         if (i < totalBatches - 1) await new Promise(r => setTimeout(r, 800));
       }
-
       parsedGames.forEach(g => { if (g.numPlays === 0) g.tags.push('Never Played'); });
       const sorted = [...parsedGames].filter(g => g.numPlays > 0).sort((a, b) => b.numPlays - a.numPlays);
       const top10 = new Set(sorted.slice(0, 10).map(g => g.id));
       parsedGames.forEach(g => { if (top10.has(g.id)) g.tags.push('Most Played'); });
-
       parsedGames.sort((a, b) => a.name.localeCompare(b.name));
       saveCollection(parsedGames);
       setGames(parsedGames);
-      setProgress(100);
-      setLoadingStatus('All done! 🎉');
+      setProgress(100); setLoadingStatus('All done! 🎉');
       setTimeout(() => { setLoading(false); setProgress(0); setLoadingStatus(''); }, 1000);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); setLoading(false); }
   };
 
   const handleJSONImport = async (e) => {
@@ -190,13 +191,9 @@ export default function ImportPage() {
       const text = await file.text();
       const imported = importFromJSON(text);
       setGames(imported);
-      setProgress(100);
-      setLoadingStatus(`Imported ${imported.length} games! 🎉`);
+      setProgress(100); setLoadingStatus(`Imported ${imported.length} games! 🎉`);
       setTimeout(() => { setLoading(false); setProgress(0); setLoadingStatus(''); }, 1000);
-    } catch (err) {
-      setError(`Failed to import: ${err.message}`);
-      setLoading(false);
-    }
+    } catch (err) { setError(`Failed: ${err.message}`); setLoading(false); }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -207,34 +204,18 @@ export default function ImportPage() {
       if (!res.ok) throw new Error('Could not find collection.json');
       const data = await res.json();
       const imported = importFromJSON(data);
-      setGames(imported);
-      setProgress(100);
-      setLoadingStatus(`Loaded ${imported.length} games! 🎉`);
+      setGames(imported); setProgress(100); setLoadingStatus(`Loaded ${imported.length} games! 🎉`);
       setTimeout(() => { setLoading(false); setProgress(0); setLoadingStatus(''); }, 1000);
-    } catch (err) {
-      setError(`Failed: ${err.message}`);
-      setLoading(false);
-    }
+    } catch (err) { setError(`Failed: ${err.message}`); setLoading(false); }
   };
 
-  const handleToggleFavorite = (gameId) => {
-    setFavorites(new Set(toggleFavorite(gameId)));
-  };
-
-  const clearCollection = () => {
-    if (confirm('Remove all games from the jar?')) {
-      saveCollection([]);
-      setGames([]);
-    }
-  };
+  const handleToggleFavorite = (gameId) => { setFavorites(new Set(toggleFavorite(gameId))); };
+  const clearCollection = () => { if (confirm('Remove all games from the jar?')) { saveCollection([]); setGames([]); } };
 
   const exportCollection = () => {
     const blob = new Blob([JSON.stringify(games, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'game-collection.json';
-    a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'game-collection.json'; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -245,14 +226,13 @@ export default function ImportPage() {
   return (
     <>
       <ShelfBackground />
-      <KittyCharacter />
+      <MeepleCharacter />
       <div className="main-content page-enter" style={{ overflow: 'auto' }}>
         <div className="import-container">
           <div className="app-title" style={{ paddingTop: '6px' }}>
             <h1>📚 Game Library</h1>
           </div>
 
-          {/* Empty state — import options */}
           {games.length === 0 && !loading && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
               <button className="btn-primary" onClick={loadBundledCollection} style={{ width: '100%' }}>
@@ -288,16 +268,14 @@ export default function ImportPage() {
 
           {error && (
             <div style={{ background: '#FFF0F0', padding: '12px 14px', borderRadius: '14px', color: '#C44',
-              fontSize: '0.85rem', marginBottom: '10px', marginTop: '10px', fontWeight: 600 }}>
-              {error}
-            </div>
+              fontSize: '0.85rem', marginBottom: '10px', marginTop: '10px', fontWeight: 600 }}>{error}</div>
           )}
 
           {games.length > 0 && !loading && (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 marginTop: '10px', marginBottom: '6px', gap: '6px' }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, flexShrink: 0 }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>
                   {games.length} games
                 </span>
                 <div style={{ display: 'flex', gap: '5px' }}>
@@ -319,8 +297,7 @@ export default function ImportPage() {
                       <img src={game.thumbnail} alt="" loading="lazy" />
                     ) : (
                       <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--blush)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '1.1rem', flexShrink: 0 }}>🎲</div>
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>🎲</div>
                     )}
                     <div className="game-info">
                       <div className="game-name">{game.name}</div>
@@ -330,8 +307,7 @@ export default function ImportPage() {
                         {game.playingTime ? ` · ${game.playingTime}min` : ''}
                       </div>
                     </div>
-                    <button className="fav-btn" onClick={() => handleToggleFavorite(game.id)}
-                      aria-label={favorites.has(game.id) ? 'Unfavorite' : 'Favorite'}>
+                    <button className="fav-btn" onClick={() => handleToggleFavorite(game.id)}>
                       {favorites.has(game.id) ? '❤️' : '🤍'}
                     </button>
                   </div>

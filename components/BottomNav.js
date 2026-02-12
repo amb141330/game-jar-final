@@ -9,7 +9,8 @@ export default function BottomNav() {
   const links = [
     { href: '/', icon: '🫙', label: 'Jar' },
     { href: '/import', icon: '📚', label: 'Games' },
-    { href: '/first-player', icon: '👆', label: 'First Player' },
+    { href: '/rewards', icon: '🏆', label: 'Rewards' },
+    { href: '/first-player', icon: '👆', label: 'First' },
   ];
 
   return (
