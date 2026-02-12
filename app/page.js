@@ -7,7 +7,7 @@ import BottomNav from '@/components/BottomNav';
 import {
   getCollection,
   getFavorites,
-  getUniqueCategories,
+  getUniqueTags,
   filterGames,
 } from '@/lib/gameStore';
 
@@ -19,15 +19,30 @@ const paperColors = [
   'var(--paper-yellow)',
 ];
 
+// Tags that should appear as quick-access pills (in order)
+const PINNED_TAGS = [
+  'Never Played',
+  'Most Played',
+  '♥ Favorites',
+  'Cooperative',
+  'Cozy',
+  '2 Player Friendly',
+  'Quick Game',
+  'Solo-able',
+  'Family Friendly',
+  'Heavy',
+];
+
 export default function JarPage() {
   const router = useRouter();
   const [games, setGames] = useState([]);
   const [favorites, setFavorites] = useState(new Set());
-  const [categories, setCategories] = useState([]);
-  const [filters, setFilters] = useState({});
+  const [allTags, setAllTags] = useState([]);
+  const [activeTags, setActiveTags] = useState([]);
   const [filteredGames, setFilteredGames] = useState([]);
   const [drawnGame, setDrawnGame] = useState(null);
   const [shaking, setShaking] = useState(false);
+  const [showMoreTags, setShowMoreTags] = useState(false);
   const jarRef = useRef(null);
 
   useEffect(() => {
@@ -35,12 +50,12 @@ export default function JarPage() {
     const favs = getFavorites();
     setGames(collection);
     setFavorites(favs);
-    setCategories(getUniqueCategories(collection));
+    setAllTags(getUniqueTags(collection));
   }, []);
 
   useEffect(() => {
-    setFilteredGames(filterGames(games, filters, favorites));
-  }, [games, filters, favorites]);
+    setFilteredGames(filterGames(games, activeTags, favorites));
+  }, [games, activeTags, favorites]);
 
   const drawGame = useCallback(() => {
     if (filteredGames.length === 0) return;
@@ -54,17 +69,21 @@ export default function JarPage() {
     }, 400);
   }, [filteredGames]);
 
-  const toggleFilter = (key, value) => {
-    setFilters(prev => {
-      const next = { ...prev };
-      if (key === 'category') {
-        next.category = prev.category === value ? undefined : value;
-      } else {
-        next[key] = !prev[key];
-      }
-      return next;
-    });
+  const toggleTag = (tag) => {
+    setActiveTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
   };
+
+  // Split tags into pinned (shown as pills) and overflow (in dropdown)
+  const pinnedAvailable = PINNED_TAGS.filter(tag =>
+    tag === '♥ Favorites' || allTags.some(t => t.tag === tag)
+  );
+  const overflowTags = allTags
+    .filter(t => !PINNED_TAGS.includes(t.tag))
+    .map(t => t.tag);
 
   if (games.length === 0) {
     return (
@@ -97,33 +116,65 @@ export default function JarPage() {
           <p className="subtitle">💕 for my favorite player 2 💕</p>
         </div>
 
-        {/* Filters */}
+        {/* Tag filters */}
         <div className="filter-bar">
-          <button
-            className={`filter-pill ${filters.neverPlayed ? 'active' : ''}`}
-            onClick={() => toggleFilter('neverPlayed')}
-          >
-            ✨ Never Played
-          </button>
-          <button
-            className={`filter-pill ${filters.favorites ? 'active' : ''}`}
-            onClick={() => toggleFilter('favorites')}
-          >
-            ♥ Favorites
-          </button>
-          {categories.length > 0 && (
-            <select
-              className={`filter-select ${filters.category ? 'active' : ''}`}
-              value={filters.category || ''}
-              onChange={e => toggleFilter('category', e.target.value || undefined)}
+          {pinnedAvailable.map(tag => (
+            <button
+              key={tag}
+              className={`filter-pill ${activeTags.includes(tag) ? 'active' : ''}`}
+              onClick={() => toggleTag(tag)}
             >
-              <option value="">All Categories</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+              {tag}
+            </button>
+          ))}
+          {overflowTags.length > 0 && (
+            <button
+              className={`filter-pill ${showMoreTags ? 'active' : ''}`}
+              onClick={() => setShowMoreTags(!showMoreTags)}
+              style={{ minWidth: 'auto' }}
+            >
+              + More
+            </button>
           )}
         </div>
+
+        {/* Expanded tag cloud */}
+        {showMoreTags && (
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '6px',
+            padding: '4px 16px 8px',
+          }}>
+            {overflowTags.map(tag => (
+              <button
+                key={tag}
+                className={`filter-pill ${activeTags.includes(tag) ? 'active' : ''}`}
+                onClick={() => toggleTag(tag)}
+                style={{ fontSize: '0.72rem', padding: '4px 10px' }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Active tag summary */}
+        {activeTags.length > 0 && (
+          <div style={{
+            textAlign: 'center',
+            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
+            padding: '0 16px',
+          }}>
+            <span
+              onClick={() => setActiveTags([])}
+              style={{ cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Clear all filters
+            </span>
+          </div>
+        )}
 
         <div className="game-count-badge">
           {filteredGames.length} game{filteredGames.length !== 1 ? 's' : ''} in jar
@@ -176,17 +227,40 @@ export default function JarPage() {
             )}
             <h2>{drawnGame.name}</h2>
             <div className="game-meta">
-              {drawnGame.yearPublished && <span>📅 {drawnGame.yearPublished}</span>}
+              {drawnGame.year && <span>📅 {drawnGame.year}</span>}
               {drawnGame.minPlayers && drawnGame.maxPlayers && (
-                <span>👥 {drawnGame.minPlayers}–{drawnGame.maxPlayers}</span>
+                <span>
+                  👥 {drawnGame.minPlayers === drawnGame.maxPlayers
+                    ? drawnGame.minPlayers
+                    : `${drawnGame.minPlayers}–${drawnGame.maxPlayers}`}
+                </span>
               )}
               {drawnGame.playingTime && <span>⏱ {drawnGame.playingTime}min</span>}
               {drawnGame.numPlays > 0 && <span>🎲 Played {drawnGame.numPlays}×</span>}
               {drawnGame.numPlays === 0 && <span>✨ Never played!</span>}
             </div>
-            {drawnGame.categories?.length > 0 && (
-              <div className="game-meta" style={{ fontSize: '0.75rem' }}>
-                {drawnGame.categories.slice(0, 3).join(' · ')}
+            {drawnGame.tags?.length > 0 && (
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '4px',
+                justifyContent: 'center',
+                marginTop: '12px',
+              }}>
+                {drawnGame.tags.filter(t => t !== 'Never Played' && t !== 'Most Played').slice(0, 5).map(tag => (
+                  <span
+                    key={tag}
+                    style={{
+                      fontSize: '0.7rem',
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                      background: 'var(--blush)',
+                      color: 'var(--berry)',
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             )}
             <p className="close-hint">tap outside to close</p>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import FloatingHearts from '@/components/FloatingHearts';
 import BottomNav from '@/components/BottomNav';
 import {
@@ -8,6 +8,7 @@ import {
   saveCollection,
   getFavorites,
   toggleFavorite,
+  importFromJSON,
   parseCollectionXML,
   parseThingXML,
 } from '@/lib/gameStore';
@@ -20,6 +21,8 @@ export default function ImportPage() {
   const [loadingStatus, setLoadingStatus] = useState('');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const collection = getCollection();
@@ -28,6 +31,7 @@ export default function ImportPage() {
     setFavorites(favs);
   }, []);
 
+  // ---- BGG Import (requires API token) ----
   const fetchCollection = async () => {
     if (!username.trim()) return;
 
@@ -37,7 +41,6 @@ export default function ImportPage() {
     setLoadingStatus('Reaching out to BoardGameGeek...');
 
     try {
-      // Step 1: Fetch collection
       const collRes = await fetch(`/api/bgg/collection?username=${encodeURIComponent(username.trim())}`);
 
       if (!collRes.ok) {
@@ -52,13 +55,13 @@ export default function ImportPage() {
       let parsedGames = parseCollectionXML(xmlText);
 
       if (parsedGames.length === 0) {
-        throw new Error('No games found for this username. Make sure the collection is public!');
+        throw new Error('No games found. Make sure the collection is public!');
       }
 
       setProgress(50);
       setLoadingStatus(`Found ${parsedGames.length} games! Loading details...`);
 
-      // Step 2: Fetch thing details in batches of 20 for categories
+      // Fetch thing details in batches of 20 for tags
       const batchSize = 20;
       const totalBatches = Math.ceil(parsedGames.length / batchSize);
 
@@ -74,11 +77,7 @@ export default function ImportPage() {
 
             parsedGames = parsedGames.map(game => {
               if (details[game.id]) {
-                return {
-                  ...game,
-                  categories: details[game.id].categories,
-                  mechanics: details[game.id].mechanics,
-                };
+                return { ...game, tags: details[game.id].tags };
               }
               return game;
             });
@@ -90,15 +89,25 @@ export default function ImportPage() {
         setProgress(50 + ((i + 1) / totalBatches) * 45);
         setLoadingStatus(`Loading details... (${Math.min((i + 1) * batchSize, parsedGames.length)}/${parsedGames.length})`);
 
-        // Small delay between batches to be nice to BGG
         if (i < totalBatches - 1) {
           await new Promise(r => setTimeout(r, 800));
         }
       }
 
-      // Sort by name
-      parsedGames.sort((a, b) => a.name.localeCompare(b.name));
+      // Add computed tags
+      parsedGames.forEach(g => {
+        if (g.numPlays === 0) g.tags.push('Never Played');
+      });
 
+      // Top 10 most played
+      const sorted = [...parsedGames].filter(g => g.numPlays > 0)
+        .sort((a, b) => b.numPlays - a.numPlays);
+      const top10 = new Set(sorted.slice(0, 10).map(g => g.id));
+      parsedGames.forEach(g => {
+        if (top10.has(g.id)) g.tags.push('Most Played');
+      });
+
+      parsedGames.sort((a, b) => a.name.localeCompare(b.name));
       saveCollection(parsedGames);
       setGames(parsedGames);
       setProgress(100);
@@ -113,8 +122,64 @@ export default function ImportPage() {
     } catch (err) {
       setError(err.message);
       setLoading(false);
-      setProgress(0);
-      setLoadingStatus('');
+    }
+  };
+
+  // ---- JSON File Import ----
+  const handleJSONImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setError('');
+    setLoadingStatus('Reading JSON file...');
+    setProgress(50);
+
+    try {
+      const text = await file.text();
+      const imported = importFromJSON(text);
+      setGames(imported);
+      setProgress(100);
+      setLoadingStatus(`Imported ${imported.length} games! 🎉`);
+
+      setTimeout(() => {
+        setLoading(false);
+        setProgress(0);
+        setLoadingStatus('');
+      }, 1000);
+    } catch (err) {
+      setError(`Failed to import JSON: ${err.message}`);
+      setLoading(false);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // ---- Load bundled collection.json ----
+  const loadBundledCollection = async () => {
+    setLoading(true);
+    setError('');
+    setLoadingStatus('Loading bundled collection...');
+    setProgress(30);
+
+    try {
+      const res = await fetch('/collection.json');
+      if (!res.ok) throw new Error('Could not find collection.json');
+      const data = await res.json();
+      const imported = importFromJSON(data);
+      setGames(imported);
+      setProgress(100);
+      setLoadingStatus(`Loaded ${imported.length} games! 🎉`);
+
+      setTimeout(() => {
+        setLoading(false);
+        setProgress(0);
+        setLoadingStatus('');
+      }, 1000);
+    } catch (err) {
+      setError(`Failed to load bundled collection: ${err.message}`);
+      setLoading(false);
     }
   };
 
@@ -130,6 +195,21 @@ export default function ImportPage() {
     }
   };
 
+  const exportCollection = () => {
+    const blob = new Blob([JSON.stringify(games, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'game-collection.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Filter displayed games by search
+  const displayedGames = searchQuery.trim()
+    ? games.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : games;
+
   return (
     <>
       <FloatingHearts />
@@ -139,25 +219,63 @@ export default function ImportPage() {
             <h1>📚 Game Library</h1>
           </div>
 
-          <div className="import-input-group">
-            <input
-              className="import-input"
-              type="text"
-              placeholder="BGG username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && fetchCollection()}
-              disabled={loading}
-            />
-            <button
-              className="btn-primary"
-              onClick={fetchCollection}
-              disabled={loading || !username.trim()}
-            >
-              {loading ? '...' : 'Import'}
-            </button>
-          </div>
+          {/* Import options when no games */}
+          {games.length === 0 && !loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+              {/* Bundled collection (primary) */}
+              <button className="btn-primary" onClick={loadBundledCollection} style={{ width: '100%' }}>
+                🫙 Load Our Collection
+              </button>
 
+              {/* JSON file upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleJSONImport}
+                style={{ display: 'none' }}
+              />
+              <button
+                className="btn-secondary"
+                onClick={() => fileInputRef.current?.click()}
+                style={{ width: '100%' }}
+              >
+                📄 Import from JSON File
+              </button>
+
+              {/* BGG import */}
+              <div style={{
+                borderTop: '1px solid var(--blush)',
+                paddingTop: '12px',
+                marginTop: '4px',
+              }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                  Or import from BGG (requires API token):
+                </p>
+                <div className="import-input-group">
+                  <input
+                    className="import-input"
+                    type="text"
+                    placeholder="BGG username"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && fetchCollection()}
+                    disabled={loading}
+                  />
+                  <button
+                    className="btn-primary"
+                    onClick={fetchCollection}
+                    disabled={loading || !username.trim()}
+                    style={{ padding: '12px 16px' }}
+                  >
+                    Import
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loading state */}
           {loading && (
             <div>
               <div className="progress-bar-container">
@@ -174,6 +292,7 @@ export default function ImportPage() {
             </div>
           )}
 
+          {/* Error */}
           {error && (
             <div style={{
               background: '#FFF0F0',
@@ -182,31 +301,68 @@ export default function ImportPage() {
               color: '#C44',
               fontSize: '0.9rem',
               marginBottom: '12px',
+              marginTop: '12px',
             }}>
               {error}
             </div>
           )}
 
+          {/* Game list when loaded */}
           {games.length > 0 && !loading && (
             <>
+              {/* Actions bar */}
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                marginTop: '12px',
                 marginBottom: '8px',
+                gap: '8px',
               }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  {games.length} games · tap ♥ to mark favorites
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                  {games.length} games
                 </span>
-                <button className="btn-secondary" onClick={clearCollection} style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
-                  Clear
-                </button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button className="btn-secondary" onClick={exportCollection}
+                    style={{ padding: '5px 10px', fontSize: '0.75rem' }}>
+                    Export
+                  </button>
+                  <button className="btn-secondary" onClick={() => fileInputRef.current?.click()}
+                    style={{ padding: '5px 10px', fontSize: '0.75rem' }}>
+                    Import
+                  </button>
+                  <button className="btn-secondary" onClick={clearCollection}
+                    style={{ padding: '5px 10px', fontSize: '0.75rem' }}>
+                    Clear
+                  </button>
+                </div>
               </div>
+
+              {/* Hidden file input for re-import */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleJSONImport}
+                style={{ display: 'none' }}
+              />
+
+              {/* Search */}
+              <input
+                className="import-input"
+                type="text"
+                placeholder="🔍 Search games..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{ marginBottom: '8px', width: '100%' }}
+              />
+
+              {/* Game list */}
               <div className="game-list">
-                {games.map(game => (
+                {displayedGames.map(game => (
                   <div key={game.id} className="game-list-item">
                     {game.thumbnail ? (
-                      <img src={game.thumbnail} alt="" />
+                      <img src={game.thumbnail} alt="" loading="lazy" />
                     ) : (
                       <div style={{
                         width: 40, height: 40, borderRadius: 8,
@@ -220,9 +376,9 @@ export default function ImportPage() {
                     <div className="game-info">
                       <div className="game-name">{game.name}</div>
                       <div className="game-detail">
-                        {game.yearPublished && `${game.yearPublished}`}
+                        {game.year && `${game.year}`}
                         {game.numPlays > 0 ? ` · ${game.numPlays} plays` : ' · Never played'}
-                        {game.categories?.length > 0 && ` · ${game.categories[0]}`}
+                        {game.tags?.length > 0 && ` · ${game.tags.filter(t => t !== 'Never Played' && t !== 'Most Played')[0] || ''}`}
                       </div>
                     </div>
                     <button
@@ -234,6 +390,11 @@ export default function ImportPage() {
                     </button>
                   </div>
                 ))}
+                {displayedGames.length === 0 && searchQuery && (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                    No games match &quot;{searchQuery}&quot;
+                  </div>
+                )}
               </div>
             </>
           )}

@@ -8,12 +8,17 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Game IDs are required' }, { status: 400 });
   }
 
-  // BGG allows up to ~20 IDs at once
   const bggUrl = `https://boardgamegeek.com/xmlapi2/thing?id=${encodeURIComponent(ids)}&stats=1`;
+
+  const headers = { 'Accept': 'application/xml' };
+  if (process.env.BGG_API_TOKEN) {
+    headers['Authorization'] = `Bearer ${process.env.BGG_API_TOKEN}`;
+  }
 
   try {
     const response = await fetch(bggUrl, {
-      headers: { 'Accept': 'application/xml' },
+      headers,
+      cache: 'no-store',
     });
 
     if (response.status === 200) {
@@ -22,6 +27,13 @@ export async function GET(request) {
         status: 200,
         headers: { 'Content-Type': 'application/xml' },
       });
+    }
+
+    if (response.status === 401) {
+      return NextResponse.json(
+        { error: 'BGG API requires authentication. Add your BGG_API_TOKEN to Vercel environment variables.' },
+        { status: 401 }
+      );
     }
 
     return NextResponse.json(

@@ -10,18 +10,22 @@ export async function GET(request) {
 
   const bggUrl = `https://boardgamegeek.com/xmlapi2/collection?username=${encodeURIComponent(username)}&own=1&stats=1&excludesubtype=boardgameexpansion`;
 
-  // BGG API often returns 202 "please wait" on first request
   let attempts = 0;
   const maxAttempts = 8;
+
+  const headers = { 'Accept': 'application/xml' };
+  if (process.env.BGG_API_TOKEN) {
+    headers['Authorization'] = `Bearer ${process.env.BGG_API_TOKEN}`;
+  }
 
   while (attempts < maxAttempts) {
     try {
       const response = await fetch(bggUrl, {
-        headers: { 'Accept': 'application/xml' },
+        headers,
+        cache: 'no-store',
       });
 
       if (response.status === 202) {
-        // BGG is processing, wait and retry
         attempts++;
         await new Promise(resolve => setTimeout(resolve, 3000));
         continue;
@@ -33,6 +37,13 @@ export async function GET(request) {
           status: 200,
           headers: { 'Content-Type': 'application/xml' },
         });
+      }
+
+      if (response.status === 401) {
+        return NextResponse.json(
+          { error: 'BGG API requires authentication. Add your BGG_API_TOKEN to Vercel environment variables. See https://boardgamegeek.com/using_the_xml_api for details.' },
+          { status: 401 }
+        );
       }
 
       return NextResponse.json(
