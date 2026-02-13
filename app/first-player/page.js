@@ -3,149 +3,61 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import FloatingHearts from '@/components/FloatingHearts';
+import { useCosmetics } from '@/lib/cosmeticEngine';
 
-const fingerEmojis = ['🩷', '💜', '💙', '🩵', '💚', '💛', '🧡', '❤️'];
+const fingerEmojis = ['🩷','💜','💙','🩵','💚','💛','🧡','❤️'];
 
 export default function FirstPlayerPage() {
   const router = useRouter();
-  const [fingers, setFingers] = useState({});
-  const [phase, setPhase] = useState('waiting');
-  const [countdown, setCountdown] = useState(3);
-  const [winnerId, setWinnerId] = useState(null);
-  const countdownTimer = useRef(null);
-  const stabilityTimer = useRef(null);
-  const colorCounter = useRef(0);
+  const { cosmetics } = useCosmetics();
+  const [fingers,setFingers]=useState({});
+  const [phase,setPhase]=useState('waiting');
+  const [countdown,setCountdown]=useState(3);
+  const [winnerId,setWinnerId]=useState(null);
+  const ct=useRef(null),st=useRef(null),cc=useRef(0);
 
-  const clearTimers = useCallback(() => {
-    if (countdownTimer.current) { clearInterval(countdownTimer.current); countdownTimer.current = null; }
-    if (stabilityTimer.current) { clearTimeout(stabilityTimer.current); stabilityTimer.current = null; }
-  }, []);
+  const clear=useCallback(()=>{if(ct.current){clearInterval(ct.current);ct.current=null;}if(st.current){clearTimeout(st.current);st.current=null;}},[]);
 
-  const startStabilityTimer = useCallback((fingerCount) => {
-    if (stabilityTimer.current) clearTimeout(stabilityTimer.current);
-    if (fingerCount < 2) {
-      setPhase('waiting'); setCountdown(3); clearTimers(); return;
-    }
-    stabilityTimer.current = setTimeout(() => {
-      setPhase('countdown'); setCountdown(3);
-      let count = 3;
-      countdownTimer.current = setInterval(() => {
-        count--;
-        setCountdown(count);
-        if (count <= 0) { clearInterval(countdownTimer.current); countdownTimer.current = null; setPhase('picking'); }
-      }, 1000);
-    }, 3000);
-  }, [clearTimers]);
+  const startStab=useCallback((n)=>{
+    if(st.current)clearTimeout(st.current);
+    if(n<2){setPhase('waiting');setCountdown(3);clear();return;}
+    st.current=setTimeout(()=>{setPhase('countdown');setCountdown(3);let c=3;
+      ct.current=setInterval(()=>{c--;setCountdown(c);if(c<=0){clearInterval(ct.current);ct.current=null;setPhase('picking');}},1000);
+    },3000);
+  },[clear]);
 
-  useEffect(() => {
-    if (phase === 'picking') {
-      setFingers(prev => {
-        const ids = Object.keys(prev);
-        if (ids.length === 0) return prev;
-        setWinnerId(ids[Math.floor(Math.random() * ids.length)]);
-        setPhase('done');
-        return prev;
-      });
-    }
-  }, [phase]);
+  useEffect(()=>{if(phase==='picking')setFingers(p=>{const ids=Object.keys(p);if(!ids.length)return p;setWinnerId(ids[Math.floor(Math.random()*ids.length)]);setPhase('done');return p;});},[phase]);
 
-  const handleTouchStart = useCallback((e) => {
-    e.preventDefault();
-    if (phase === 'done') {
-      setPhase('waiting'); setWinnerId(null); setFingers({}); setCountdown(3);
-      colorCounter.current = 0; clearTimers(); return;
-    }
-    const newFingers = {};
-    for (const touch of e.changedTouches) {
-      newFingers[touch.identifier] = { x: touch.clientX, y: touch.clientY, colorIndex: colorCounter.current++ % fingerEmojis.length };
-    }
-    setFingers(prev => {
-      const updated = { ...prev, ...newFingers };
-      if (phase === 'countdown') { clearTimers(); setPhase('waiting'); setCountdown(3); }
-      startStabilityTimer(Object.keys(updated).length);
-      return updated;
-    });
-  }, [phase, clearTimers, startStabilityTimer]);
+  const onStart=useCallback(e=>{e.preventDefault();
+    if(phase==='done'){setPhase('waiting');setWinnerId(null);setFingers({});setCountdown(3);cc.current=0;clear();return;}
+    const nf={};for(const t of e.changedTouches)nf[t.identifier]={x:t.clientX,y:t.clientY,ci:cc.current++%fingerEmojis.length};
+    setFingers(p=>{const u={...p,...nf};if(phase==='countdown'){clear();setPhase('waiting');setCountdown(3);}startStab(Object.keys(u).length);return u;});
+  },[phase,clear,startStab]);
 
-  const handleTouchMove = useCallback((e) => {
-    e.preventDefault();
-    if (phase === 'done') return;
-    setFingers(prev => {
-      const updated = { ...prev };
-      for (const touch of e.changedTouches) {
-        if (updated[touch.identifier]) updated[touch.identifier] = { ...updated[touch.identifier], x: touch.clientX, y: touch.clientY };
-      }
-      return updated;
-    });
-  }, [phase]);
+  const onMove=useCallback(e=>{e.preventDefault();if(phase==='done')return;
+    setFingers(p=>{const u={...p};for(const t of e.changedTouches)if(u[t.identifier])u[t.identifier]={...u[t.identifier],x:t.clientX,y:t.clientY};return u;});
+  },[phase]);
 
-  const handleTouchEnd = useCallback((e) => {
-    e.preventDefault();
-    if (phase === 'done') return;
-    setFingers(prev => {
-      const updated = { ...prev };
-      for (const touch of e.changedTouches) delete updated[touch.identifier];
-      if (phase === 'countdown') { clearTimers(); setPhase('waiting'); setCountdown(3); }
-      startStabilityTimer(Object.keys(updated).length);
-      return updated;
-    });
-  }, [phase, clearTimers, startStabilityTimer]);
+  const onEnd=useCallback(e=>{e.preventDefault();if(phase==='done')return;
+    setFingers(p=>{const u={...p};for(const t of e.changedTouches)delete u[t.identifier];
+      if(phase==='countdown'){clear();setPhase('waiting');setCountdown(3);}startStab(Object.keys(u).length);return u;});
+  },[phase,clear,startStab]);
 
-  useEffect(() => { return () => clearTimers(); }, [clearTimers]);
+  useEffect(()=>()=>clear(),[clear]);
 
-  const fingerCount = Object.keys(fingers).length;
-  const getInstruction = () => {
-    if (phase === 'done') return 'Tap anywhere to play again!';
-    if (phase === 'countdown') return 'Hold still...';
-    if (fingerCount === 0) return 'Everyone place a finger on the screen!';
-    if (fingerCount === 1) return 'Need at least 2 fingers!';
-    return `${fingerCount} players ready! Hold still...`;
-  };
-
-  const goBack = () => {
-    router.push('/');
-  };
+  const fc=Object.keys(fingers).length;
+  const inst=phase==='done'?'Tap anywhere to play again!':phase==='countdown'?'Hold still...':fc===0?'Everyone place a finger on the screen!':fc===1?'Need at least 2 fingers!':`${fc} players ready! Hold still...`;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'linear-gradient(180deg, #FFF8F0, #FFE4E1)' }}>
-      <FloatingHearts />
-
-      {/* Touch arena fills the screen */}
-      <div
-        className="touch-arena"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-      >
-        <div className="instruction">{getInstruction()}</div>
-
-        {phase === 'countdown' && (
-          <div className="countdown" key={countdown}>{countdown}</div>
-        )}
-
-        {Object.entries(fingers).map(([id, finger]) => {
-          const isWinner = phase === 'done' && id === winnerId;
-          const isLoser = phase === 'done' && id !== winnerId;
-          return (
-            <div key={id}
-              className={`finger-dot ${isWinner ? 'winner' : isLoser ? 'loser' : 'waiting'}`}
-              style={{ left: finger.x, top: finger.y }}>
-              {isWinner ? '👑' : fingerEmojis[finger.colorIndex]}
-            </div>
-          );
-        })}
+    <div style={{position:'fixed',inset:0,zIndex:300,background:`linear-gradient(180deg,${cosmetics?.bgFrom||'#FFF8F0'},${cosmetics?.bgTo||'#FFE4E1'})`}}>
+      <FloatingHearts color={cosmetics?.heartColor}/>
+      <div className="touch-arena" onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd} onTouchCancel={onEnd}>
+        <div className="instruction">{inst}</div>
+        {phase==='countdown'&&<div className="countdown" key={countdown}>{countdown}</div>}
+        {Object.entries(fingers).map(([id,f])=>{const w=phase==='done'&&id===winnerId,l=phase==='done'&&id!==winnerId;
+          return <div key={id} className={`finger-dot ${w?'winner':l?'loser':'waiting'}`} style={{left:f.x,top:f.y}}>{w?'👑':fingerEmojis[f.ci]}</div>;})}
       </div>
-
-      {/* Back button is OUTSIDE the touch arena - rendered on top with its own z-index */}
-      <button
-        className="touch-back-btn"
-        onPointerDown={(e) => { e.stopPropagation(); }}
-        onClick={(e) => { e.stopPropagation(); goBack(); }}
-        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); goBack(); }}
-      >
-        ← Back to Jar
-      </button>
+      <button className="touch-back-btn" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();router.push('/');}} onTouchEnd={e=>{e.stopPropagation();e.preventDefault();router.push('/');}}>← Back to Jar</button>
     </div>
   );
 }
