@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import FloatingHearts from '@/components/FloatingHearts';
-import ShelfBackground from '@/components/ShelfBackground';
+import AnimalParade from '@/components/AnimalParade';
 import BottomNav from '@/components/BottomNav';
 import { useCosmetics } from '@/lib/cosmeticEngine';
 import { getCollection, getFavorites, getUniqueTags, filterGames } from '@/lib/gameStore';
@@ -30,7 +30,7 @@ const SPARKLE_POS = [{x:-25,y:-20},{x:25,y:-25},{x:-40,y:5},{x:40,y:0},{x:-15,y:
 
 function JarDecoration({ decor }) {
   if (!decor) return null;
-  const decorMap = {
+  const m = {
     ribbon: <text x="100" y="175" textAnchor="middle" fontSize="20">🎀</text>,
     star: <text x="155" y="115" textAnchor="middle" fontSize="16">⭐</text>,
     heart: <text x="155" y="120" textAnchor="middle" fontSize="16">❤️</text>,
@@ -42,11 +42,7 @@ function JarDecoration({ decor }) {
     clover: <text x="155" y="105" textAnchor="middle" fontSize="14">🍀</text>,
     butterfly: <text x="145" y="30" textAnchor="middle" fontSize="16">🦋</text>,
   };
-  return (
-    <svg style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:6}} viewBox="0 0 200 280">
-      {decorMap[decor] || null}
-    </svg>
-  );
+  return <svg style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:6}} viewBox="0 0 200 280">{m[decor]||null}</svg>;
 }
 
 export default function JarPage() {
@@ -64,10 +60,7 @@ export default function JarPage() {
   const [showDrawer, setShowDrawer] = useState(false);
   const idleTimer = useRef(null);
 
-  useEffect(() => {
-    const c = getCollection(); setGames(c); setFavorites(getFavorites()); setAllTags(getUniqueTags(c));
-  }, []);
-
+  useEffect(() => { const c = getCollection(); setGames(c); setFavorites(getFavorites()); setAllTags(getUniqueTags(c)); }, []);
   useEffect(() => {
     let r = filterGames(games, activeTags.filter(t=>!t.startsWith('__')), favorites);
     if (activeTags.includes('__short')) r = r.filter(g=>g.playingTime&&g.playingTime<=30);
@@ -79,12 +72,8 @@ export default function JarPage() {
   useEffect(() => {
     if (!games.length) return;
     const sched = () => {
-      idleTimer.current = setTimeout(() => {
-        if (!drawnGame) { setJarAnim('idle'); setTimeout(()=>setJarAnim(''),700); }
-        sched();
-      }, 5000 + Math.random()*8000);
-    };
-    sched(); return ()=>clearTimeout(idleTimer.current);
+      idleTimer.current = setTimeout(() => { if (!drawnGame) { setJarAnim('idle'); setTimeout(()=>setJarAnim(''),700); } sched(); }, 5000 + Math.random()*8000);
+    }; sched(); return ()=>clearTimeout(idleTimer.current);
   }, [games.length, drawnGame]);
 
   const drawGame = useCallback(() => {
@@ -97,106 +86,52 @@ export default function JarPage() {
   const toggleTag = d => { const a = TAG_DISPLAY_MAP[d]||d; setActiveTags(p=>p.includes(a)?p.filter(t=>t!==a):[...p,a]); };
   const isActive = d => { const a = TAG_DISPLAY_MAP[d]||d; return activeTags.includes(a); };
   const existingTags = new Set(allTags.map(t=>t.tag));
-
   const paperColors = cosmetics?.paperColors || DEFAULT_PAPERS;
   const sparkles = cosmetics?.sparkleEmojis || DEFAULT_SPARKLES;
+  const bgStyle = cosmetics?.bgFrom ? { background: `linear-gradient(180deg, ${cosmetics.bgFrom}, ${cosmetics.bgTo})` } : {};
 
-  if (!games.length) {
-    return (
-      <>
-        <ShelfBackground tintFrom={cosmetics?.bgFrom} tintTo={cosmetics?.bgTo}/>
-        <FloatingHearts color={cosmetics?.heartColor}/>
-        <div className="main-content page-enter">
-          <div className="app-title" style={{paddingTop:'60px'}}><h1>Game Night Jar</h1><p className="subtitle">💕 for my favorite player 2 💕</p></div>
-          <div className="empty-state">
-            <div className="empty-jar">🫙</div>
-            <p>The jar is empty! Let&apos;s fill it with your games.</p>
-            <button className="btn-primary" onClick={()=>router.push('/import')}>Import Games</button>
-          </div>
-        </div>
-        <BottomNav navBg={cosmetics?.navBg} navBorder={cosmetics?.navBorder}/>
-      </>
-    );
-  }
+  if (!games.length) return (
+    <><FloatingHearts color={cosmetics?.heartColor}/><AnimalParade/>
+      <div className="main-content page-enter" style={bgStyle}>
+        <div className="app-title" style={{paddingTop:'60px'}}><h1>Game Night Jar</h1><p className="subtitle">💕 for my favorite player 2 💕</p></div>
+        <div className="empty-state"><div className="empty-jar">🫙</div><p>The jar is empty! Let&apos;s fill it with your games.</p><button className="btn-primary" onClick={()=>router.push('/import')}>Import Games</button></div>
+      </div><BottomNav navBg={cosmetics?.navBg} navBorder={cosmetics?.navBorder}/></>
+  );
 
   return (
-    <>
-      <ShelfBackground tintFrom={cosmetics?.bgFrom} tintTo={cosmetics?.bgTo}/>
-      <FloatingHearts color={cosmetics?.heartColor}/>
-      <div className="main-content page-enter">
+    <><FloatingHearts color={cosmetics?.heartColor}/><AnimalParade/>
+      <div className="main-content page-enter" style={bgStyle}>
         <div className="app-title"><h1>Game Night Jar</h1><p className="subtitle">💕 for my favorite player 2 💕</p></div>
-
         <div className="filter-section"><div className="filter-scroll-wrapper"><div className="filter-bar">
           {QUICK_TAGS.map(t=><button key={t} className={`filter-pill ${isActive(t)?'active':''}`} onClick={()=>toggleTag(t)}>{t}</button>)}
           <button className={`filter-pill ${showDrawer?'active':''}`} onClick={()=>setShowDrawer(true)} style={{background:showDrawer?undefined:'var(--blush-soft)'}}>🎛 More</button>
         </div></div></div>
-
-        {activeTags.length > 0 ? (
-          <div className="game-count-badge">{filteredGames.length} match
-            <span onClick={()=>setActiveTags([])} style={{marginLeft:8,color:'var(--deep-rose)',cursor:'pointer',textDecoration:'underline',fontWeight:700}}>clear</span>
-          </div>
-        ) : <div className="game-count-badge">{filteredGames.length} games in jar</div>}
-
+        {activeTags.length>0?<div className="game-count-badge">{filteredGames.length} match<span onClick={()=>setActiveTags([])} style={{marginLeft:8,color:'var(--deep-rose)',cursor:'pointer',textDecoration:'underline',fontWeight:700}}>clear</span></div>:<div className="game-count-badge">{filteredGames.length} games in jar</div>}
         <div className="jar-section">
-          <div className={`jar-container ${jarAnim==='shake'?'jar-shake':jarAnim==='idle'?'jar-idle-wobble':''}`}
-            onClick={drawGame} role="button" tabIndex={0} onKeyDown={e=>e.key==='Enter'&&drawGame()}>
-            {showSparkles && <div className="sparkle-burst">
-              {SPARKLE_POS.map((s,i)=><span key={i} className="sparkle" style={{left:s.x,top:s.y}}>{sparkles[i]}</span>)}
-            </div>}
-            <div className={`jar-lid-wrapper ${lidPop?'lid-popping':''}`}>
-              <div className="jar-lid" style={{
-                ...(cosmetics?.lidFrom ? { background: `linear-gradient(180deg, ${cosmetics.lidFrom}, ${cosmetics.lidTo})` } : {}),
-              }}/>
-            </div>
+          <div className={`jar-container ${jarAnim==='shake'?'jar-shake':jarAnim==='idle'?'jar-idle-wobble':''}`} onClick={drawGame} role="button" tabIndex={0} onKeyDown={e=>e.key==='Enter'&&drawGame()}>
+            {showSparkles&&<div className="sparkle-burst">{SPARKLE_POS.map((s,i)=><span key={i} className="sparkle" style={{left:s.x,top:s.y}}>{sparkles[i]}</span>)}</div>}
+            <div className={`jar-lid-wrapper ${lidPop?'lid-popping':''}`}><div className="jar-lid" style={{...(cosmetics?.lidFrom?{background:`linear-gradient(180deg,${cosmetics.lidFrom},${cosmetics.lidTo})`}:{})}}/></div>
             <div className="jar-neck"/>
-            <div className="jar-body" style={{
-              ...(cosmetics?.jarTint ? {
-                background: `linear-gradient(135deg, ${cosmetics.jarTint} 0%, rgba(200,225,240,0.1) 50%, ${cosmetics.jarTint} 100%)`,
-                borderColor: cosmetics.jarEdge,
-              } : {}),
-            }}>
+            <div className="jar-body" style={{...(cosmetics?.jarTint?{background:`linear-gradient(135deg,${cosmetics.jarTint} 0%,rgba(200,225,240,0.1) 50%,${cosmetics.jarTint} 100%)`,borderColor:cosmetics.jarEdge}:{})}}>
               <div className="jar-shine"/><div className="jar-shine-2"/>
-              <div className="jar-papers">
-                {filteredGames.slice(0,28).map((g,i)=><div key={g.id} className="jar-paper-slip" style={{backgroundColor:paperColors[i%paperColors.length]}}/>)}
-              </div>
+              <div className="jar-papers">{filteredGames.slice(0,28).map((g,i)=><div key={g.id} className="jar-paper-slip" style={{backgroundColor:paperColors[i%paperColors.length]}}/>)}</div>
             </div>
             <JarDecoration decor={cosmetics?.jarDecor}/>
           </div>
           <p className="tap-hint">{filteredGames.length>0?'tap the jar ♡':'no games match these filters'}</p>
         </div>
       </div>
-
-      {showDrawer && <>
-        <div className="filter-drawer-overlay" onClick={()=>setShowDrawer(false)}/>
-        <div className="filter-drawer">
-          <div className="drawer-handle"/>
-          <h3>🎛 Filter Games</h3>
-          {Object.entries(TAG_CATEGORIES).map(([cat,tags])=>{
-            const avail = tags.filter(t=>t.startsWith('⏱')||existingTags.has(t));
-            if (!avail.length) return null;
-            return <div key={cat} className="tag-section"><div className="tag-section-title">{cat}</div>
-              <div className="tag-grid">{avail.map(t=><button key={t} className={`filter-pill ${isActive(t)?'active':''}`} onClick={()=>toggleTag(t)}>{t}</button>)}</div></div>;
-          })}
-          {activeTags.length>0&&<button className="filter-clear-btn" onClick={()=>{setActiveTags([]);setShowDrawer(false);}}>Clear All Filters</button>}
-          <button className="btn-primary" onClick={()=>setShowDrawer(false)} style={{width:'100%',marginTop:10}}>Done ({filteredGames.length} game{filteredGames.length!==1?'s':''})</button>
-        </div>
-      </>}
-
-      {drawnGame && <div className="drawn-paper-overlay" onClick={()=>setDrawnGame(null)}>
-        <div className="drawn-paper" onClick={e=>e.stopPropagation()}>
-          {drawnGame.thumbnail&&<img src={drawnGame.thumbnail} alt={drawnGame.name} className="game-image"/>}
-          <h2>{drawnGame.name}</h2>
-          <div className="game-meta">
-            {drawnGame.year&&<span>📅 {drawnGame.year}</span>}
-            {drawnGame.minPlayers&&drawnGame.maxPlayers&&<span>👥 {drawnGame.minPlayers===drawnGame.maxPlayers?drawnGame.minPlayers:`${drawnGame.minPlayers}–${drawnGame.maxPlayers}`}</span>}
-            {drawnGame.playingTime&&<span>⏱ {drawnGame.playingTime}min</span>}
-            {drawnGame.numPlays>0?<span>🎲 {drawnGame.numPlays}×</span>:<span>✨ New!</span>}
-          </div>
-          {drawnGame.tags?.length>0&&<div className="tag-chips">{drawnGame.tags.filter(t=>t!=='Never Played'&&t!=='Most Played').slice(0,5).map(t=><span key={t} className="tag-chip">{t}</span>)}</div>}
-          <p className="close-hint">tap outside to close</p>
-        </div>
-      </div>}
-
+      {showDrawer&&<><div className="filter-drawer-overlay" onClick={()=>setShowDrawer(false)}/><div className="filter-drawer"><div className="drawer-handle"/><h3>🎛 Filter Games</h3>
+        {Object.entries(TAG_CATEGORIES).map(([cat,tags])=>{const avail=tags.filter(t=>t.startsWith('⏱')||existingTags.has(t));if(!avail.length)return null;return<div key={cat} className="tag-section"><div className="tag-section-title">{cat}</div><div className="tag-grid">{avail.map(t=><button key={t} className={`filter-pill ${isActive(t)?'active':''}`} onClick={()=>toggleTag(t)}>{t}</button>)}</div></div>;})}
+        {activeTags.length>0&&<button className="filter-clear-btn" onClick={()=>{setActiveTags([]);setShowDrawer(false);}}>Clear All Filters</button>}
+        <button className="btn-primary" onClick={()=>setShowDrawer(false)} style={{width:'100%',marginTop:10}}>Done ({filteredGames.length} game{filteredGames.length!==1?'s':''})</button>
+      </div></>}
+      {drawnGame&&<div className="drawn-paper-overlay" onClick={()=>setDrawnGame(null)}><div className="drawn-paper" onClick={e=>e.stopPropagation()}>
+        {drawnGame.thumbnail&&<img src={drawnGame.thumbnail} alt={drawnGame.name} className="game-image"/>}<h2>{drawnGame.name}</h2>
+        <div className="game-meta">{drawnGame.year&&<span>📅 {drawnGame.year}</span>}{drawnGame.minPlayers&&drawnGame.maxPlayers&&<span>👥 {drawnGame.minPlayers===drawnGame.maxPlayers?drawnGame.minPlayers:`${drawnGame.minPlayers}–${drawnGame.maxPlayers}`}</span>}{drawnGame.playingTime&&<span>⏱ {drawnGame.playingTime}min</span>}{drawnGame.numPlays>0?<span>🎲 {drawnGame.numPlays}×</span>:<span>✨ New!</span>}</div>
+        {drawnGame.tags?.length>0&&<div className="tag-chips">{drawnGame.tags.filter(t=>t!=='Never Played'&&t!=='Most Played').slice(0,5).map(t=><span key={t} className="tag-chip">{t}</span>)}</div>}
+        <p className="close-hint">tap outside to close</p>
+      </div></div>}
       <BottomNav navBg={cosmetics?.navBg} navBorder={cosmetics?.navBorder}/>
     </>
   );

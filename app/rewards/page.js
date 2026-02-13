@@ -1,8 +1,7 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import FloatingHearts from '@/components/FloatingHearts';
-import ShelfBackground from '@/components/ShelfBackground';
+import AnimalParade from '@/components/AnimalParade';
 import BottomNav from '@/components/BottomNav';
 import { useCosmetics } from '@/lib/cosmeticEngine';
 import { getCollection } from '@/lib/gameStore';
@@ -29,10 +28,8 @@ export default function RewardsPage() {
 
   useEffect(()=>{
     setGames(getCollection());
-    const state=getBattlePassState();
-    setBpState(state);
-    const info=getLevelFromXP(state.totalXP);
-    setLevelInfo(info);
+    const state=getBattlePassState(); setBpState(state);
+    const info=getLevelFromXP(state.totalXP); setLevelInfo(info);
     setViewBlock(getBlockForLevel(Math.max(1,info.level)));
     setEquipped(getEquippedCosmetics());
   },[]);
@@ -44,7 +41,7 @@ export default function RewardsPage() {
     setXpPopup({total:play.xpEarned,bonuses:play.bonuses,gameName:game.name});
     if(nl.level>old){setTimeout(()=>setLevelUpAnim(true),1500);setTimeout(()=>setLevelUpAnim(false),4000);}
     setTimeout(()=>setXpPopup(null),3500);
-  },[games,levelInfo]);
+  },[levelInfo]);
 
   const handleRedeem=l=>{setBpState(redeemReward(l));setShowRedeemConfirm(null);};
   const handleEquip=(c,id)=>{setEquipped(equipCosmetic(c,id));refreshCosmetics();};
@@ -56,12 +53,13 @@ export default function RewardsPage() {
   const blockRewards=getRewardsForBlock(viewBlock);
   const currentTitle=getCurrentTitle(levelInfo.level);
   const filtered=searchQuery.trim()?games.filter(g=>g.name.toLowerCase().includes(searchQuery.toLowerCase())):games;
+  const bgStyle=cosmetics?.bgFrom?{background:`linear-gradient(180deg,${cosmetics.bgFrom},${cosmetics.bgTo})`}:{};
 
   return (
     <>
-      <ShelfBackground tintFrom={cosmetics?.bgFrom} tintTo={cosmetics?.bgTo}/>
       <FloatingHearts color={cosmetics?.heartColor}/>
-      <div className="main-content page-enter" style={{overflow:'auto'}}>
+      <AnimalParade/>
+      <div className="main-content page-enter" style={{overflow:'auto',...bgStyle}}>
         <div className="rewards-container">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:6}}>
             <h1 style={{fontFamily:'Caveat,cursive',fontSize:'1.8rem',color:'var(--berry)'}}>🏆 Rewards</h1>
@@ -102,14 +100,15 @@ export default function RewardsPage() {
           </div></div>
 
           <div className="reward-track">{blockRewards.map(rw=>{
-            const ul=levelInfo.level>=rw.level,rd=rw.type==='redeemable',rmd=bpState.redeemedRewards.includes(rw.level),cur=!ul&&rw===ALL_REWARDS.find(r=>r.level>levelInfo.level);
-            return(<div key={`${rw.level}-${rw.type}`} className={`reward-card ${ul?'unlocked':'locked'} ${cur?'current':''}`}>
+            const ul=levelInfo.level>=rw.level,rd=rw.type==='redeemable',isAnimal=rw.type==='animal',rmd=bpState.redeemedRewards.includes(rw.level),cur=!ul&&rw===ALL_REWARDS.find(r=>r.level>levelInfo.level);
+            return(<div key={`${rw.level}-${rw.type}`} className={`reward-card ${ul?'unlocked':'locked'} ${cur?'current':''} ${isAnimal?'animal-reward':''}`}>
               <div className="reward-level-badge">Lv.{rw.level}</div>
               <div className="reward-icon">{rw.icon}</div>
               <div style={{flex:1,minWidth:0}}><div className="reward-title">{rw.title}</div><div className="reward-desc">{rw.categoryLabel?`${rw.categoryLabel}: `:''}{rw.reward}</div></div>
               {ul&&rd&&!rmd&&<button className="redeem-btn" onClick={()=>setShowRedeemConfirm(rw.level)}>{rw.redeemLabel}</button>}
               {rmd&&<div className="redeemed-badge">✅ Used</div>}
               {ul&&rw.type==='cosmetic'&&<div className="cosmetic-badge">🎨</div>}
+              {ul&&isAnimal&&<div className="cosmetic-badge">🐾</div>}
               {!ul&&<div className="locked-badge">🔒</div>}
             </div>);
           })}</div>
@@ -140,49 +139,33 @@ export default function RewardsPage() {
         </div>
       </div>}
 
-      {showSettings&&<>
-        <div className="filter-drawer-overlay" onClick={()=>{setShowSettings(false);setSettingsCategory(null);}}/>
-        <div className="filter-drawer" style={{maxHeight:'85vh'}}>
-          <div className="drawer-handle"/>
-          {!settingsCategory?<>
-            <h3>⚙️ Cosmetics</h3>
-            <p style={{textAlign:'center',fontSize:'0.78rem',color:'var(--text-muted)',marginBottom:12,fontWeight:500}}>Equip unlocked cosmetics to customize!</p>
-            <div style={{display:'flex',flexDirection:'column',gap:6}}>
-              {Object.entries(COSMETIC_CATEGORIES).map(([k,cat])=>{
-                const all=getAllCosmeticsForCategory(k),uc=all.filter(c=>c.level<=levelInfo.level).length;
-                const ei=equipped[k]?all.find(c=>c.cosmeticId===equipped[k]):null;
-                return(<button key={k} onClick={()=>setSettingsCategory(k)} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',background:equipped[k]?'var(--blush-soft)':'white',border:`2px solid ${equipped[k]?'var(--rose)':'var(--blush)'}`,borderRadius:14,cursor:'pointer',textAlign:'left',fontFamily:'Quicksand'}}>
-                  <span style={{fontSize:'1.4rem'}}>{cat.icon}</span>
-                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:'0.85rem',color:'var(--text-dark)'}}>{cat.label}</div><div style={{fontSize:'0.7rem',color:'var(--text-muted)'}}>{ei?`${ei.icon} ${ei.title}`:'None'} · {uc}/{all.length} unlocked</div></div>
-                  <span style={{color:'var(--text-muted)',fontSize:'1rem'}}>›</span>
-                </button>);
-              })}
-            </div>
-            <button className="btn-primary" onClick={()=>{setShowSettings(false);setSettingsCategory(null);}} style={{width:'100%',marginTop:12}}>Done</button>
-          </>:<>
-            <button onClick={()=>setSettingsCategory(null)} style={{background:'none',border:'none',color:'var(--deep-rose)',fontFamily:'Quicksand',fontWeight:700,fontSize:'0.85rem',cursor:'pointer',marginBottom:4}}>← Back</button>
-            <h3>{COSMETIC_CATEGORIES[settingsCategory].icon} {COSMETIC_CATEGORIES[settingsCategory].label}</h3>
-            <button onClick={()=>handleUnequip(settingsCategory)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',width:'100%',background:!equipped[settingsCategory]?'var(--blush-soft)':'white',border:`2px solid ${!equipped[settingsCategory]?'var(--deep-rose)':'var(--blush)'}`,borderRadius:14,cursor:'pointer',marginBottom:6,fontFamily:'Quicksand',textAlign:'left'}}>
-              <span style={{fontSize:'1.3rem',width:32,textAlign:'center'}}>✖️</span>
-              <div style={{flex:1}}><div style={{fontWeight:700,fontSize:'0.82rem'}}>Default</div><div style={{fontSize:'0.68rem',color:'var(--text-muted)'}}>No customization</div></div>
-              {!equipped[settingsCategory]&&<span style={{fontSize:'0.7rem',fontWeight:800,color:'var(--deep-rose)'}}>EQUIPPED</span>}
-            </button>
-            <div style={{display:'flex',flexDirection:'column',gap:4}}>
-              {getAllCosmeticsForCategory(settingsCategory).map(item=>{
-                const ul=levelInfo.level>=item.level,eq=equipped[settingsCategory]===item.cosmeticId;
-                return(<button key={item.cosmeticId} onClick={()=>ul&&handleEquip(settingsCategory,item.cosmeticId)} disabled={!ul}
-                  style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',width:'100%',background:eq?'var(--blush-soft)':ul?'white':'#F8F4F4',border:`2px solid ${eq?'var(--deep-rose)':ul?'var(--blush)':'#E8E0E0'}`,borderRadius:14,cursor:ul?'pointer':'not-allowed',fontFamily:'Quicksand',textAlign:'left',opacity:ul?1:0.55}}>
-                  <span style={{fontSize:'1.3rem',width:32,textAlign:'center'}}>{ul?item.icon:'🔒'}</span>
-                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:'0.82rem',color:ul?'var(--text-dark)':'var(--text-muted)'}}>{item.title}</div><div style={{fontSize:'0.68rem',color:'var(--text-muted)'}}>{ul?item.reward:`Unlocks at Level ${item.level}`}</div></div>
-                  {eq&&<span style={{fontSize:'0.7rem',fontWeight:800,color:'var(--deep-rose)'}}>EQUIPPED</span>}
-                  {!ul&&<span style={{fontSize:'0.65rem',fontWeight:700,color:'var(--text-muted)'}}>Lv.{item.level}</span>}
-                </button>);
-              })}
-            </div>
-            <button className="btn-primary" onClick={()=>setSettingsCategory(null)} style={{width:'100%',marginTop:12}}>Done</button>
-          </>}
-        </div>
-      </>}
+      {showSettings&&<><div className="filter-drawer-overlay" onClick={()=>{setShowSettings(false);setSettingsCategory(null);}}/><div className="filter-drawer" style={{maxHeight:'85vh'}}><div className="drawer-handle"/>
+        {!settingsCategory?<>
+          <h3>⚙️ Cosmetics</h3><p style={{textAlign:'center',fontSize:'0.78rem',color:'var(--text-muted)',marginBottom:12,fontWeight:500}}>Equip unlocked cosmetics to customize!</p>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {Object.entries(COSMETIC_CATEGORIES).map(([k,cat])=>{const all=getAllCosmeticsForCategory(k),uc=all.filter(c=>c.level<=levelInfo.level).length;const ei=equipped[k]?all.find(c=>c.cosmeticId===equipped[k]):null;
+              return(<button key={k} onClick={()=>setSettingsCategory(k)} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',background:equipped[k]?'var(--blush-soft)':'white',border:`2px solid ${equipped[k]?'var(--rose)':'var(--blush)'}`,borderRadius:14,cursor:'pointer',textAlign:'left',fontFamily:'Quicksand'}}>
+                <span style={{fontSize:'1.4rem'}}>{cat.icon}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:'0.85rem',color:'var(--text-dark)'}}>{cat.label}</div><div style={{fontSize:'0.7rem',color:'var(--text-muted)'}}>{ei?`${ei.icon} ${ei.title}`:'None'} · {uc}/{all.length} unlocked</div></div><span style={{color:'var(--text-muted)',fontSize:'1rem'}}>›</span>
+              </button>);})}
+          </div><button className="btn-primary" onClick={()=>{setShowSettings(false);setSettingsCategory(null);}} style={{width:'100%',marginTop:12}}>Done</button>
+        </>:<>
+          <button onClick={()=>setSettingsCategory(null)} style={{background:'none',border:'none',color:'var(--deep-rose)',fontFamily:'Quicksand',fontWeight:700,fontSize:'0.85rem',cursor:'pointer',marginBottom:4}}>← Back</button>
+          <h3>{COSMETIC_CATEGORIES[settingsCategory].icon} {COSMETIC_CATEGORIES[settingsCategory].label}</h3>
+          <button onClick={()=>handleUnequip(settingsCategory)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',width:'100%',background:!equipped[settingsCategory]?'var(--blush-soft)':'white',border:`2px solid ${!equipped[settingsCategory]?'var(--deep-rose)':'var(--blush)'}`,borderRadius:14,cursor:'pointer',marginBottom:6,fontFamily:'Quicksand',textAlign:'left'}}>
+            <span style={{fontSize:'1.3rem',width:32,textAlign:'center'}}>✖️</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:'0.82rem'}}>Default</div><div style={{fontSize:'0.68rem',color:'var(--text-muted)'}}>No customization</div></div>
+            {!equipped[settingsCategory]&&<span style={{fontSize:'0.7rem',fontWeight:800,color:'var(--deep-rose)'}}>EQUIPPED</span>}
+          </button>
+          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+            {getAllCosmeticsForCategory(settingsCategory).map(item=>{const ul=levelInfo.level>=item.level,eq=equipped[settingsCategory]===item.cosmeticId;
+              return(<button key={item.cosmeticId} onClick={()=>ul&&handleEquip(settingsCategory,item.cosmeticId)} disabled={!ul}
+                style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',width:'100%',background:eq?'var(--blush-soft)':ul?'white':'#F8F4F4',border:`2px solid ${eq?'var(--deep-rose)':ul?'var(--blush)':'#E8E0E0'}`,borderRadius:14,cursor:ul?'pointer':'not-allowed',fontFamily:'Quicksand',textAlign:'left',opacity:ul?1:0.55}}>
+                <span style={{fontSize:'1.3rem',width:32,textAlign:'center'}}>{ul?item.icon:'🔒'}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:'0.82rem',color:ul?'var(--text-dark)':'var(--text-muted)'}}>{item.title}</div><div style={{fontSize:'0.68rem',color:'var(--text-muted)'}}>{ul?item.reward:`Unlocks at Level ${item.level}`}</div></div>
+                {eq&&<span style={{fontSize:'0.7rem',fontWeight:800,color:'var(--deep-rose)'}}>EQUIPPED</span>}
+                {!ul&&<span style={{fontSize:'0.65rem',fontWeight:700,color:'var(--text-muted)'}}>Lv.{item.level}</span>}
+              </button>);})}
+          </div><button className="btn-primary" onClick={()=>setSettingsCategory(null)} style={{width:'100%',marginTop:12}}>Done</button>
+        </>}
+      </div></>}
 
       {xpPopup&&<div className="xp-popup"><div className="xp-popup-header"><span className="xp-popup-game">{xpPopup.gameName}</span><span className="xp-popup-total">+{xpPopup.total} XP</span></div>
         <div className="xp-popup-bonuses">{xpPopup.bonuses.map((b,i)=><div key={i} className="xp-bonus-line"><span>{b.label}</span><span>+{b.xp}</span></div>)}</div></div>}

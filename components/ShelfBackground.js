@@ -1,5 +1,4 @@
 'use client';
-
 import { useMemo } from 'react';
 
 const bookColors = [
@@ -17,37 +16,24 @@ function genBooks(n) {
 }
 
 /**
- * Infinite scrolling bookshelf background.
- *
- * Each row renders 120 books (~1800px), doubled in the DOM for seamless looping
- * (~3600px total). The animation scrolls exactly 50% — the width of one set —
- * so the loop is invisible. Works on any viewport up to ~1800px wide.
- *
- * @param tintFrom - optional top color for background gradient tint
- * @param tintTo   - optional bottom color for background gradient tint
- * The tint renders BEHIND the book rows, so shelves are always visible.
+ * 200 books/row × ~15px avg = ~3000px per set, doubled = ~6000px.
+ * Covers any screen up to 3000px wide (ultra-wide monitors).
  */
 export default function ShelfBackground({ tintFrom, tintTo }) {
   const shelves = useMemo(() => [
-    genBooks(120), genBooks(120), genBooks(120), genBooks(120),
+    genBooks(200), genBooks(200), genBooks(200), genBooks(200),
   ], []);
 
   return (
     <div className="shelf-bg" aria-hidden="true">
-      {/* Color tint layer — sits behind books at z-index 0 */}
-      {tintFrom && (
-        <div className="shelf-tint" style={{
-          background: `linear-gradient(180deg, ${tintFrom}, ${tintTo})`,
-        }}/>
-      )}
+      {tintFrom && <div className="shelf-tint" style={{
+        background: `linear-gradient(180deg, ${tintFrom}, ${tintTo})`,
+      }}/>}
       {shelves.map((books, ri) => (
         <div key={ri} className={`shelf-row shelf-row-${ri + 1}`}>
           {[...books, ...books].map((b, bi) => (
             <div key={bi} className="shelf-book" style={{
-              backgroundColor: b.color,
-              height: b.h,
-              width: b.w,
-              opacity: 0.5,
+              backgroundColor: b.color, height: b.h, width: b.w, opacity: 0.5,
             }}/>
           ))}
         </div>
