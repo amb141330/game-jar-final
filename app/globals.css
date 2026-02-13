@@ -35,7 +35,9 @@ body {
 #__next { height: 100%; }
 h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
 
-/* ═══ FLOATING HEARTS ═══ */
+/* ═══════════════════════════════════
+   FLOATING HEARTS
+   ═══════════════════════════════════ */
 .hearts-bg { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
 .hearts-bg .heart { position: absolute; opacity: 0.07; animation: floatHeart linear infinite; color: var(--deep-rose); }
 @keyframes floatHeart {
@@ -44,7 +46,9 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
   100% { transform: translateY(-10vh) rotate(360deg) scale(0.5); opacity: 0; }
 }
 
-/* ═══ LAYOUT ═══ */
+/* ═══════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════ */
 .page-enter { animation: pageIn 0.4s ease-out; }
 @keyframes pageIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 .main-content {
@@ -54,7 +58,9 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
   position: relative; z-index: 1;
 }
 
-/* ═══ BOTTOM NAV ═══ */
+/* ═══════════════════════════════════
+   BOTTOM NAV
+   ═══════════════════════════════════ */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: rgba(255,248,240,0.95);
@@ -73,12 +79,82 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
 .bottom-nav a .nav-icon { font-size: 1.4rem; line-height: 1; transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
 .bottom-nav a.active .nav-icon { transform: scale(1.15); }
 
-/* ═══ APP TITLE ═══ */
+/* ═══════════════════════════════════
+   APP TITLE
+   ═══════════════════════════════════ */
 .app-title { text-align: center; padding: 10px 0 2px; flex-shrink: 0; }
 .app-title h1 { font-size: 1.8rem; color: var(--berry); line-height: 1.1; }
 .app-title .subtitle { font-family: 'Caveat', cursive; font-size: 0.95rem; color: var(--rose); }
 
-/* ═══ JAR ═══ */
+/* ═══════════════════════════════════
+   GAME SHELF BACKGROUND
+   
+   120 books per row × ~15px average = ~1800px per set.
+   Doubled in DOM = ~3600px total.
+   Animation scrolls 50% = exactly one set = seamless loop.
+   Works on any screen width up to ~1800px (covers all devices + desktop).
+   ═══════════════════════════════════ */
+.shelf-bg {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none; overflow: hidden;
+}
+
+/* Tint layer: sits BETWEEN the cream background and the book rows.
+   The books render on top with opacity so the tint shows through subtly. */
+.shelf-tint {
+  position: absolute; inset: 0;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.shelf-row {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0;
+  height: 70px;
+  /* Use will-change for GPU compositing */
+  will-change: transform;
+  z-index: 1;
+}
+
+/* Wooden shelf plank under each row */
+.shelf-row::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  /* stretch to full scroll width */
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(180deg, var(--shelf-wood-light), var(--shelf-wood), var(--shelf-wood-dark));
+  border-radius: 0 0 2px 2px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+}
+
+.shelf-row-1 { top: 8%;  animation: shelfScroll 80s linear infinite; }
+.shelf-row-2 { top: 28%; animation: shelfScroll 100s linear infinite reverse; }
+.shelf-row-3 { top: 48%; animation: shelfScroll 70s linear infinite; }
+.shelf-row-4 { top: 68%; animation: shelfScroll 90s linear infinite reverse; }
+
+/* Scroll exactly 50% = one full set of books, then it loops seamlessly */
+@keyframes shelfScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.shelf-book {
+  flex-shrink: 0;
+  border-radius: 2px 2px 0 0;
+  position: relative;
+  bottom: 0;
+}
+
+/* ═══════════════════════════════════
+   JAR
+   ═══════════════════════════════════ */
 .jar-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; padding-bottom: 10px; }
 .jar-container { position: relative; width: 200px; height: 280px; margin: 0 auto; cursor: pointer; transition: transform 0.1s ease; }
 .jar-container:active { transform: scale(0.97); }
@@ -137,7 +213,9 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
 .sparkle:nth-child(5) { animation-delay: 0.08s; }
 .sparkle:nth-child(6) { animation-delay: 0.12s; }
 
-/* ═══ DRAWN PAPER OVERLAY ═══ */
+/* ═══════════════════════════════════
+   DRAWN PAPER OVERLAY
+   ═══════════════════════════════════ */
 .drawn-paper-overlay {
   position: fixed; inset: 0; background: rgba(74,48,64,0.45);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -168,12 +246,16 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
 .drawn-paper .tag-chip { font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; background: var(--blush); color: var(--berry); font-weight: 600; }
 .drawn-paper .close-hint { font-size: 0.7rem; color: var(--text-muted); margin-top: 14px; opacity: 0.5; }
 
-/* ═══ FILTER SYSTEM ═══ */
+/* ═══════════════════════════════════
+   FILTER SYSTEM
+   ═══════════════════════════════════ */
 .filter-section { flex-shrink: 0; position: relative; }
 .filter-scroll-wrapper { position: relative; margin: 0; }
-.filter-scroll-wrapper::before, .filter-scroll-wrapper::after { content: ''; position: absolute; top: 0; bottom: 0; width: 20px; z-index: 2; pointer-events: none; }
-.filter-scroll-wrapper::before { left: 0; background: linear-gradient(90deg, var(--cream) 0%, transparent 100%); }
-.filter-scroll-wrapper::after { right: 0; background: linear-gradient(-90deg, var(--cream) 0%, transparent 100%); }
+.filter-scroll-wrapper::before, .filter-scroll-wrapper::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 20px; z-index: 2; pointer-events: none;
+}
+.filter-scroll-wrapper::before { left: 0; background: linear-gradient(90deg, rgba(255,248,240,0.8) 0%, transparent 100%); }
+.filter-scroll-wrapper::after { right: 0; background: linear-gradient(-90deg, rgba(255,248,240,0.8) 0%, transparent 100%); }
 
 .filter-bar {
   display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden;
@@ -221,16 +303,29 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
 .tap-hint { text-align: center; font-family: 'Caveat', cursive; font-size: 1.2rem; color: var(--deep-rose); animation: gentlePulse 3s ease-in-out infinite; padding: 4px 0; }
 @keyframes gentlePulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-/* ═══ BUTTONS ═══ */
+/* ═══════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════ */
 .btn-primary { padding: 14px 28px; background: linear-gradient(135deg, var(--deep-rose), var(--berry)); color: white; border: none; border-radius: 20px; font-family: 'Quicksand'; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(212,114,140,0.35); }
 .btn-primary:active { transform: scale(0.97); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-secondary { padding: 10px 18px; background: white; color: var(--deep-rose); border: 2px solid var(--rose); border-radius: 16px; font-family: 'Quicksand'; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .btn-secondary:active { transform: scale(0.96); background: var(--blush-soft); }
 
-/* ═══ MEEPLE-CAT (Games page) ═══ */
-.meeple-character { position: fixed; bottom: 76px; z-index: 2; pointer-events: none; animation: meepleWalk 16s linear infinite; }
-@keyframes meepleWalk { 0% { left: -70px; } 100% { left: calc(100vw + 10px); } }
+/* ═══════════════════════════════════
+   MEEPLE-CAT (Games page)
+   Gumdrop-shaped cat meeple that hops across the screen.
+   ═══════════════════════════════════ */
+.meeple-character {
+  position: fixed; bottom: 76px; z-index: 2;
+  pointer-events: none;
+  animation: meepleWalk 18s linear infinite;
+}
+@keyframes meepleWalk {
+  0% { left: -80px; }
+  100% { left: calc(100vw + 20px); }
+}
+
 .meeple-inner { animation: meepleHop 0.45s ease-in-out infinite; }
 @keyframes meepleHop {
   0%,100% { transform: translateY(0) rotate(0deg); }
@@ -238,26 +333,25 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
   50% { transform: translateY(-16px) rotate(0deg); }
   70% { transform: translateY(-14px) rotate(3deg); }
 }
+
 .meeple-shadow {
   position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
-  width: 30px; height: 6px; background: rgba(0,0,0,0.08); border-radius: 50%;
+  width: 30px; height: 6px; background: rgba(0,0,0,0.1); border-radius: 50%;
   animation: meepleShadow 0.45s ease-in-out infinite;
 }
-@keyframes meepleShadow { 0%,100% { transform: translateX(-50%) scaleX(1); opacity: 0.12; } 50% { transform: translateX(-50%) scaleX(0.6); opacity: 0.05; } }
-.meeple-svg { width: 48px; height: 56px; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.12)); }
+@keyframes meepleShadow {
+  0%,100% { transform: translateX(-50%) scaleX(1); opacity: 0.12; }
+  50% { transform: translateX(-50%) scaleX(0.6); opacity: 0.05; }
+}
 
-/* ═══ GAME SHELF BG ═══ */
-.shelf-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.shelf-row { position: absolute; left: 0; display: flex; align-items: flex-end; gap: 3px; padding: 0 8px; height: 70px; }
-.shelf-row::after { content: ''; position: absolute; bottom: 0; left: -20px; right: -20px; height: 8px; background: linear-gradient(180deg, var(--shelf-wood-light), var(--shelf-wood), var(--shelf-wood-dark)); border-radius: 0 0 2px 2px; box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
-.shelf-row-1 { top: 8%; animation: shelfScroll 60s linear infinite; }
-.shelf-row-2 { top: 28%; animation: shelfScroll 75s linear infinite reverse; }
-.shelf-row-3 { top: 48%; animation: shelfScroll 55s linear infinite; }
-.shelf-row-4 { top: 68%; animation: shelfScroll 70s linear infinite reverse; }
-@keyframes shelfScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-.shelf-book { flex-shrink: 0; width: 14px; border-radius: 2px 2px 0 0; position: relative; bottom: 0; }
+.meeple-svg {
+  width: 52px; height: 60px;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.15));
+}
 
-/* ═══ IMPORT PAGE ═══ */
+/* ═══════════════════════════════════
+   IMPORT PAGE
+   ═══════════════════════════════════ */
 .import-container { padding: 16px; max-width: 420px; margin: 0 auto; position: relative; z-index: 1; }
 .import-input-group { display: flex; gap: 8px; margin: 12px 0; }
 .import-input {
@@ -279,7 +373,9 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
 .game-list-item .fav-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 6px; transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1); }
 .game-list-item .fav-btn:active { transform: scale(1.4); }
 
-/* ═══ LOADING ═══ */
+/* ═══════════════════════════════════
+   LOADING
+   ═══════════════════════════════════ */
 .loader { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 0; }
 .loader-hearts { display: flex; gap: 6px; }
 .loader-hearts span { font-size: 1.3rem; animation: loaderBounce 1.2s ease-in-out infinite; }
@@ -290,12 +386,16 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
 .progress-bar-container { width: 100%; height: 6px; background: var(--blush); border-radius: 3px; overflow: hidden; margin: 10px 0; }
 .progress-bar { height: 100%; background: linear-gradient(90deg, var(--rose), var(--deep-rose)); border-radius: 3px; transition: width 0.3s ease; }
 
-/* ═══ EMPTY STATE ═══ */
+/* ═══════════════════════════════════
+   EMPTY STATE
+   ═══════════════════════════════════ */
 .empty-state { text-align: center; padding: 30px 20px; }
 .empty-state .empty-jar { font-size: 3.5rem; margin-bottom: 10px; animation: idleWobble 2s ease-in-out infinite; }
 .empty-state p { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; margin-bottom: 16px; }
 
-/* ═══ FIRST PLAYER ═══ */
+/* ═══════════════════════════════════
+   FIRST PLAYER
+   ═══════════════════════════════════ */
 .touch-arena { position: absolute; inset: 0; background: transparent; touch-action: none; }
 .touch-arena .instruction { font-family: 'Caveat'; font-size: 1.6rem; color: var(--deep-rose); text-align: center; padding: 0 24px; position: absolute; top: max(50px, env(safe-area-inset-top, 20px)); left: 0; right: 0; z-index: 2; pointer-events: none; }
 .touch-arena .countdown { font-family: 'Caveat'; font-size: 5rem; color: var(--berry); position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 2; pointer-events: none; animation: countPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
@@ -318,7 +418,9 @@ h1, h2, h3 { font-family: 'Caveat', cursive; font-weight: 600; }
 }
 .touch-back-btn:active { transform: translateX(-50%) scale(0.96); background: var(--blush-soft); }
 
-/* ═══ BATTLE PASS / REWARDS ═══ */
+/* ═══════════════════════════════════
+   BATTLE PASS / REWARDS
+   ═══════════════════════════════════ */
 .rewards-container { padding: 12px 16px; max-width: 420px; margin: 0 auto; }
 
 .level-card {

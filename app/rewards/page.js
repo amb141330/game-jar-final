@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import FloatingHearts from '@/components/FloatingHearts';
+import ShelfBackground from '@/components/ShelfBackground';
 import BottomNav from '@/components/BottomNav';
 import { useCosmetics } from '@/lib/cosmeticEngine';
 import { getCollection } from '@/lib/gameStore';
@@ -55,12 +56,12 @@ export default function RewardsPage() {
   const blockRewards=getRewardsForBlock(viewBlock);
   const currentTitle=getCurrentTitle(levelInfo.level);
   const filtered=searchQuery.trim()?games.filter(g=>g.name.toLowerCase().includes(searchQuery.toLowerCase())):games;
-  const bgStyle=cosmetics?.bgFrom?{background:`linear-gradient(180deg,${cosmetics.bgFrom},${cosmetics.bgTo})`}:{};
 
   return (
     <>
+      <ShelfBackground tintFrom={cosmetics?.bgFrom} tintTo={cosmetics?.bgTo}/>
       <FloatingHearts color={cosmetics?.heartColor}/>
-      <div className="main-content page-enter" style={{overflow:'auto',...bgStyle}}>
+      <div className="main-content page-enter" style={{overflow:'auto'}}>
         <div className="rewards-container">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:6}}>
             <h1 style={{fontFamily:'Caveat,cursive',fontSize:'1.8rem',color:'var(--berry)'}}>🏆 Rewards</h1>

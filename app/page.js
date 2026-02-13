@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import FloatingHearts from '@/components/FloatingHearts';
+import ShelfBackground from '@/components/ShelfBackground';
 import BottomNav from '@/components/BottomNav';
 import { useCosmetics } from '@/lib/cosmeticEngine';
 import { getCollection, getFavorites, getUniqueTags, filterGames } from '@/lib/gameStore';
@@ -27,7 +28,6 @@ const TAG_CATEGORIES = {
 };
 const SPARKLE_POS = [{x:-25,y:-20},{x:25,y:-25},{x:-40,y:5},{x:40,y:0},{x:-15,y:-35},{x:15,y:-40}];
 
-// Jar decoration overlays
 function JarDecoration({ decor }) {
   if (!decor) return null;
   const decorMap = {
@@ -100,13 +100,13 @@ export default function JarPage() {
 
   const paperColors = cosmetics?.paperColors || DEFAULT_PAPERS;
   const sparkles = cosmetics?.sparkleEmojis || DEFAULT_SPARKLES;
-  const bgStyle = cosmetics?.bgFrom ? { background: `linear-gradient(180deg, ${cosmetics.bgFrom}, ${cosmetics.bgTo})` } : {};
 
   if (!games.length) {
     return (
       <>
+        <ShelfBackground tintFrom={cosmetics?.bgFrom} tintTo={cosmetics?.bgTo}/>
         <FloatingHearts color={cosmetics?.heartColor}/>
-        <div className="main-content page-enter" style={bgStyle}>
+        <div className="main-content page-enter">
           <div className="app-title" style={{paddingTop:'60px'}}><h1>Game Night Jar</h1><p className="subtitle">💕 for my favorite player 2 💕</p></div>
           <div className="empty-state">
             <div className="empty-jar">🫙</div>
@@ -121,8 +121,9 @@ export default function JarPage() {
 
   return (
     <>
+      <ShelfBackground tintFrom={cosmetics?.bgFrom} tintTo={cosmetics?.bgTo}/>
       <FloatingHearts color={cosmetics?.heartColor}/>
-      <div className="main-content page-enter" style={bgStyle}>
+      <div className="main-content page-enter">
         <div className="app-title"><h1>Game Night Jar</h1><p className="subtitle">💕 for my favorite player 2 💕</p></div>
 
         <div className="filter-section"><div className="filter-scroll-wrapper"><div className="filter-bar">
