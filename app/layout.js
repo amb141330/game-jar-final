@@ -1,4 +1,5 @@
 import './globals.css';
+import AnimalParade from '@/components/AnimalParade';
 
 export const metadata = {
   title: 'Game Night Jar 🫙💕',
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
+        <AnimalParade/>
         {children}
       </body>
     </html>

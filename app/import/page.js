@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import FloatingHearts from '@/components/FloatingHearts';
 import ShelfBackground from '@/components/ShelfBackground';
-import AnimalParade from '@/components/AnimalParade';
+
 import BottomNav from '@/components/BottomNav';
 import { useCosmetics } from '@/lib/cosmeticEngine';
 import { getCollection, saveCollection, getFavorites, toggleFavorite, importFromJSON, parseCollectionXML, parseThingXML } from '@/lib/gameStore';
@@ -69,7 +69,7 @@ export default function ImportPage() {
     <>
       <ShelfBackground tintFrom={cosmetics?.bgFrom} tintTo={cosmetics?.bgTo}/>
       <FloatingHearts color={cosmetics?.heartColor}/>
-      <AnimalParade/>
+      
       <div className="main-content page-enter" style={{overflow:'auto'}}>
         <div className="import-container">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:6}}>

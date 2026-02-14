@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import FloatingHearts from '@/components/FloatingHearts';
-import AnimalParade from '@/components/AnimalParade';
+
 import BottomNav from '@/components/BottomNav';
 import { useCosmetics } from '@/lib/cosmeticEngine';
 import { getCollection, getFavorites, getUniqueTags, filterGames } from '@/lib/gameStore';
@@ -132,7 +132,7 @@ export default function JarPage() {
   const fmtTime = s => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
   if (!games.length) return (
-    <><FloatingHearts color={cosmetics?.heartColor}/><AnimalParade/>
+    <><FloatingHearts color={cosmetics?.heartColor}/>
       <div className="main-content page-enter" style={bgStyle}>
         <div className="app-title" style={{paddingTop:'60px'}}><h1>Game Night Jar</h1><p className="subtitle">💕 for my favorite player 2 💕</p></div>
         <div className="empty-state"><div className="empty-jar">🫙</div><p>The jar is empty! Let&apos;s fill it with your games.</p><button className="btn-primary" onClick={()=>router.push('/import')}>Import Games</button></div>
@@ -140,7 +140,7 @@ export default function JarPage() {
   );
 
   return (
-    <><FloatingHearts color={cosmetics?.heartColor}/><AnimalParade/>
+    <><FloatingHearts color={cosmetics?.heartColor}/>
       <div className="main-content page-enter" style={bgStyle}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 16px 0'}}>
           <div className="app-title" style={{padding:0,textAlign:'left'}}><h1 style={{fontSize:'1.6rem'}}>Game Night Jar</h1></div>

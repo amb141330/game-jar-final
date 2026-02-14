@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { getUnlockedAnimals, getBattlePassState, getLevelFromXP, getEquippedCosmetics, COSMETIC_POOLS } from '@/lib/battlePass';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
+import { getUnlockedAnimals, getBattlePassState, getLevelFromXP, getEquippedCosmetics, COSMETIC_POOLS, ALL_REWARDS } from '@/lib/battlePass';
 
 // ── Accessory overlay (hat) scaled per animal ───────────────
 function AccessoryOverlay({ accessory, offset }) {
@@ -22,7 +23,45 @@ function AccessoryOverlay({ accessory, offset }) {
 }
 
 // ── Animal SVGs ─────────────────────────────────────────────
-function CatSVG({acc,ao}){return(<svg viewBox="0 0 40 36" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/><path d="M30 28 Q38 28 38 20 Q38 12 34 14" stroke="#5C4033" strokeWidth="2.5" fill="none" strokeLinecap="round"/><circle cx="12" cy="30" r="3.5" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1"/><circle cx="28" cy="30" r="3.5" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1"/><ellipse cx="20" cy="26" rx="9" ry="7" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1.2"/><path d="M10 14 L6 4 Q12 6 16 12" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1.2" strokeLinejoin="round"/><path d="M30 14 L34 4 Q28 6 24 12" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1.2" strokeLinejoin="round"/><path d="M9 12 L7 6 Q11 8 13 11" fill="#FFB6C1" opacity="0.6"/><path d="M31 12 L33 6 Q29 8 27 11" fill="#FFB6C1" opacity="0.6"/><ellipse cx="20" cy="18" rx="12" ry="10" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1.2"/><circle cx="15" cy="19" r="2.2" fill="#332211"/><circle cx="25" cy="19" r="2.2" fill="#332211"/><circle cx="14.2" cy="18.2" r="0.8" fill="white"/><circle cx="24.2" cy="18.2" r="0.8" fill="white"/><path d="M19 21 Q20 22 21 21" stroke="#5C4033" strokeWidth="0.8" fill="none" strokeLinecap="round"/><path d="M18 22.5 Q20 24 22 22.5" stroke="#5C4033" strokeWidth="0.8" fill="none" strokeLinecap="round"/><line x1="8" y1="20" x2="2" y2="19" stroke="#5C4033" strokeWidth="0.5" opacity="0.3"/><line x1="8" y1="22" x2="2" y2="23" stroke="#5C4033" strokeWidth="0.5" opacity="0.3"/><line x1="32" y1="20" x2="38" y2="19" stroke="#5C4033" strokeWidth="0.5" opacity="0.3"/><line x1="32" y1="22" x2="38" y2="23" stroke="#5C4033" strokeWidth="0.5" opacity="0.3"/><ellipse cx="17" cy="27" rx="2" ry="1.5" fill="#FFE4C9" stroke="#5C4033" strokeWidth="0.8"/><ellipse cx="23" cy="27" rx="2" ry="1.5" fill="#FFE4C9" stroke="#5C4033" strokeWidth="0.8"/><circle cx="10" cy="22" r="2.5" fill="#FFB6C1" opacity="0.3"/><circle cx="30" cy="22" r="2.5" fill="#FFB6C1" opacity="0.3"/></svg>);}
+
+// Cat: rounder ears, fluffy tail, sitting chibi pose
+function CatSVG({acc,ao}){return(<svg viewBox="0 0 40 36" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/>
+  {/* Fluffy tail — thick with fur tufts */}
+  <path d="M30 26 Q36 24 37 18 Q37 12 34 10" stroke="#5C4033" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+  <path d="M30 26 Q36 24 37 18 Q37 12 34 10" stroke="#FFE4C9" strokeWidth="2" fill="none" strokeLinecap="round"/>
+  <path d="M34 10 Q32 8 34 7" stroke="#FFE4C9" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+  <path d="M34 10 Q36 9 35 7" stroke="#FFE4C9" strokeWidth="2" fill="none" strokeLinecap="round"/>
+  {/* Back paws */}
+  <circle cx="12" cy="30" r="3.5" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1"/>
+  <circle cx="28" cy="30" r="3.5" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1"/>
+  {/* Body */}
+  <ellipse cx="20" cy="26" rx="9" ry="7" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1.2"/>
+  {/* Ears — wide rounded */}
+  <path d="M9 14 Q6 5 8 4 Q11 3 15 11" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1.2" strokeLinejoin="round"/>
+  <path d="M31 14 Q34 5 32 4 Q29 3 25 11" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1.2" strokeLinejoin="round"/>
+  <path d="M10 13 Q8 7 9 6 Q11 5 13 11" fill="#FFB6C1" opacity="0.6"/>
+  <path d="M30 13 Q32 7 31 6 Q29 5 27 11" fill="#FFB6C1" opacity="0.6"/>
+  {/* Head */}
+  <ellipse cx="20" cy="18" rx="12" ry="10" fill="#FFE4C9" stroke="#5C4033" strokeWidth="1.2"/>
+  {/* Eyes */}
+  <circle cx="15" cy="19" r="2.2" fill="#332211"/><circle cx="25" cy="19" r="2.2" fill="#332211"/>
+  <circle cx="14.2" cy="18.2" r="0.8" fill="white"/><circle cx="24.2" cy="18.2" r="0.8" fill="white"/>
+  {/* Nose + mouth */}
+  <path d="M19 21 Q20 22 21 21" stroke="#5C4033" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
+  <path d="M18 22.5 Q20 24 22 22.5" stroke="#5C4033" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
+  {/* Whiskers */}
+  <line x1="8" y1="20" x2="2" y2="19" stroke="#5C4033" strokeWidth="0.5" opacity="0.3"/>
+  <line x1="8" y1="22" x2="2" y2="23" stroke="#5C4033" strokeWidth="0.5" opacity="0.3"/>
+  <line x1="32" y1="20" x2="38" y2="19" stroke="#5C4033" strokeWidth="0.5" opacity="0.3"/>
+  <line x1="32" y1="22" x2="38" y2="23" stroke="#5C4033" strokeWidth="0.5" opacity="0.3"/>
+  {/* Front paws */}
+  <ellipse cx="17" cy="27" rx="2" ry="1.5" fill="#FFE4C9" stroke="#5C4033" strokeWidth="0.8"/>
+  <ellipse cx="23" cy="27" rx="2" ry="1.5" fill="#FFE4C9" stroke="#5C4033" strokeWidth="0.8"/>
+  {/* Blush */}
+  <circle cx="10" cy="22" r="2.5" fill="#FFB6C1" opacity="0.3"/>
+  <circle cx="30" cy="22" r="2.5" fill="#FFB6C1" opacity="0.3"/>
+</svg>);}
+
 function BunnySVG({acc,ao}){return(<svg viewBox="0 0 40 40" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/><ellipse cx="14" cy="6" rx="4" ry="12" fill="white" stroke="#8B7355" strokeWidth="1.2"/><ellipse cx="26" cy="6" rx="4" ry="12" fill="white" stroke="#8B7355" strokeWidth="1.2"/><ellipse cx="14" cy="5" rx="2" ry="8" fill="#FFB6C1" opacity="0.5"/><ellipse cx="26" cy="5" rx="2" ry="8" fill="#FFB6C1" opacity="0.5"/><ellipse cx="20" cy="26" rx="13" ry="12" fill="white" stroke="#8B7355" strokeWidth="1.3"/><circle cx="15" cy="23" r="2" fill="#5C4033"/><circle cx="25" cy="23" r="2" fill="#5C4033"/><circle cx="15.7" cy="22.3" r="0.7" fill="white"/><circle cx="25.7" cy="22.3" r="0.7" fill="white"/><ellipse cx="20" cy="27" rx="2" ry="1.5" fill="#FFB0A0"/><path d="M18 29 Q20 31 22 29" stroke="#8B7355" strokeWidth="0.7" fill="none"/><ellipse cx="12" cy="27" rx="3" ry="1.5" fill="#FFB6C1" opacity="0.3"/><ellipse cx="28" cy="27" rx="3" ry="1.5" fill="#FFB6C1" opacity="0.3"/><circle cx="33" cy="30" r="4" fill="white" stroke="#8B7355" strokeWidth="0.8"/></svg>);}
 function DogSVG({acc,ao}){return(<svg viewBox="0 0 44 36" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/><ellipse cx="10" cy="16" rx="6" ry="10" fill="#C49A6C" stroke="#7A5C3D" strokeWidth="1.2" transform="rotate(-15 10 16)"/><ellipse cx="34" cy="16" rx="6" ry="10" fill="#C49A6C" stroke="#7A5C3D" strokeWidth="1.2" transform="rotate(15 34 16)"/><ellipse cx="22" cy="22" rx="14" ry="12" fill="#E8CFA0" stroke="#7A5C3D" strokeWidth="1.3"/><path d="M36 20 Q44 12 40 6" stroke="#7A5C3D" strokeWidth="2.5" fill="none" strokeLinecap="round"/><circle cx="17" cy="20" r="2.2" fill="#5C4033"/><circle cx="27" cy="20" r="2.2" fill="#5C4033"/><circle cx="17.7" cy="19.3" r="0.8" fill="white"/><circle cx="27.7" cy="19.3" r="0.8" fill="white"/><ellipse cx="22" cy="24.5" rx="2.5" ry="2" fill="#4A3030"/><path d="M20 27 Q22 29 24 27" stroke="#7A5C3D" strokeWidth="0.8" fill="none"/><ellipse cx="22" cy="29" rx="2" ry="2.5" fill="#FF8888" opacity="0.7"/></svg>);}
 function TurtleSVG({acc,ao}){return(<svg viewBox="0 0 48 32" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/><ellipse cx="24" cy="18" rx="16" ry="13" fill="#6B8E5A" stroke="#4A6B3A" strokeWidth="1.4"/><path d="M24 6 L18 18 L24 28 L30 18 Z" fill="#5A7D4A" opacity="0.4"/><ellipse cx="42" cy="20" rx="6" ry="5" fill="#90B878" stroke="#5A7D4A" strokeWidth="1"/><circle cx="44" cy="18" r="1.5" fill="#4A3030"/><circle cx="44.5" cy="17.5" r="0.5" fill="white"/><path d="M42 22 Q44 23.5 46 22" stroke="#5A7D4A" strokeWidth="0.6" fill="none"/><ellipse cx="14" cy="28" rx="4" ry="3" fill="#90B878" stroke="#5A7D4A" strokeWidth="0.6"/><ellipse cx="34" cy="28" rx="4" ry="3" fill="#90B878" stroke="#5A7D4A" strokeWidth="0.6"/></svg>);}
@@ -32,56 +71,126 @@ function PenguinSVG({acc,ao}){return(<svg viewBox="0 0 36 38" fill="none" classN
 function RedPandaSVG({acc,ao}){return(<svg viewBox="0 0 44 38" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/><circle cx="10" cy="8" r="5" fill="#C04020" stroke="#8B3015" strokeWidth="1"/><circle cx="34" cy="8" r="5" fill="#C04020" stroke="#8B3015" strokeWidth="1"/><circle cx="10" cy="8" r="3" fill="#E8D0B0"/><circle cx="34" cy="8" r="3" fill="#E8D0B0"/><ellipse cx="22" cy="22" rx="14" ry="13" fill="#C04020" stroke="#8B3015" strokeWidth="1.3"/><ellipse cx="22" cy="20" rx="9" ry="8" fill="#E8D0B0"/><ellipse cx="16" cy="18" rx="4" ry="3" fill="#8B3015" opacity="0.6"/><ellipse cx="28" cy="18" rx="4" ry="3" fill="#8B3015" opacity="0.6"/><circle cx="16" cy="18" r="2" fill="#3A2020"/><circle cx="28" cy="18" r="2" fill="#3A2020"/><ellipse cx="22" cy="22.5" rx="2" ry="1.5" fill="#3A2020"/><rect x="36" y="16" width="6" height="14" rx="3" fill="#C04020" stroke="#8B3015" strokeWidth="0.8"/><rect x="36" y="18" width="6" height="2" fill="#8B3015" opacity="0.4"/><rect x="36" y="22" width="6" height="2" fill="#8B3015" opacity="0.4"/></svg>);}
 function HedgehogSVG({acc,ao}){return(<svg viewBox="0 0 42 32" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/>{[[-3,10],[0,5],[4,2],[9,0],[14,-1],[19,0],[24,1],[28,3],[31,6],[33,10]].map(([x,y],i)=><polygon key={i} points={`${x+10},${y+10} ${x+8},${y+4} ${x+12},${y+4}`} fill="#8B7355" opacity="0.8"/>)}<ellipse cx="22" cy="20" rx="15" ry="10" fill="#C4A56E" stroke="#8B7355" strokeWidth="1.3"/><ellipse cx="34" cy="20" rx="7" ry="7" fill="#E8D0B0" stroke="#8B7355" strokeWidth="1"/><circle cx="36" cy="18" r="1.8" fill="#3A2020"/><circle cx="36.5" cy="17.5" r="0.6" fill="white"/><circle cx="40" cy="20" r="1.5" fill="#3A2020"/><ellipse cx="16" cy="28" rx="3" ry="2" fill="#C4A56E" stroke="#8B7355" strokeWidth="0.6"/><ellipse cx="28" cy="28" rx="3" ry="2" fill="#C4A56E" stroke="#8B7355" strokeWidth="0.6"/></svg>);}
 function DragonSVG({acc,ao}){return(<svg viewBox="0 0 52 40" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/><path d="M14 18 Q4 6 8 2 L14 10 L18 4 L20 14" fill="#B080D0" stroke="#8060A0" strokeWidth="0.8" opacity="0.8"/><path d="M38 18 Q48 6 44 2 L38 10 L34 4 L32 14" fill="#B080D0" stroke="#8060A0" strokeWidth="0.8" opacity="0.8"/><ellipse cx="26" cy="24" rx="14" ry="12" fill="#A070C8" stroke="#7050A0" strokeWidth="1.3"/><ellipse cx="26" cy="26" rx="8" ry="8" fill="#D0B8E8"/><polygon points="18,12 16,4 21,10" fill="#C090E0"/><polygon points="34,12 36,4 31,10" fill="#C090E0"/><circle cx="21" cy="20" r="2.5" fill="#FFD700"/><circle cx="31" cy="20" r="2.5" fill="#FFD700"/><ellipse cx="21" cy="20" rx="1" ry="2" fill="#3A2020"/><ellipse cx="31" cy="20" rx="1" ry="2" fill="#3A2020"/><ellipse cx="26" cy="26" rx="3" ry="2" fill="#C090E0"/><path d="M24 28 Q26 30 28 28" stroke="#7050A0" strokeWidth="0.7" fill="none"/><path d="M40 24 Q48 20 46 14" stroke="#A070C8" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M46 14 L44 10 L48 12 Z" fill="#C090E0"/></svg>);}
-
-// ── Unicorn: white body, rainbow mane, golden horn ──────────
 function UnicornSVG({acc,ao}){return(<svg viewBox="0 0 50 40" fill="none" className="animal-svg"><AccessoryOverlay accessory={acc} offset={ao}/>
-  {/* Horn */}
   <polygon points="28,4 25,16 31,16" fill="#FFD700" stroke="#DAA520" strokeWidth="0.8"/>
   <line x1="26" y1="8" x2="30" y2="8" stroke="#FFF8DC" strokeWidth="0.5"/><line x1="26.5" y1="11" x2="30" y2="11" stroke="#FFF8DC" strokeWidth="0.5"/>
-  {/* Ears */}
   <polygon points="22,14 19,5 26,12" fill="white" stroke="#B0A0C0" strokeWidth="1" strokeLinejoin="round"/>
   <polygon points="34,14 37,5 30,12" fill="white" stroke="#B0A0C0" strokeWidth="1" strokeLinejoin="round"/>
-  {/* Mane (rainbow) */}
   <path d="M18 12 Q14 18 16 24" stroke="#FF6B6B" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7"/>
   <path d="M16 14 Q12 20 14 26" stroke="#FFB347" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7"/>
   <path d="M14 16 Q10 22 13 28" stroke="#87CEEB" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7"/>
   <path d="M13 18 Q9 24 12 30" stroke="#DDA0DD" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7"/>
-  {/* Body */}
   <ellipse cx="28" cy="24" rx="15" ry="13" fill="white" stroke="#B0A0C0" strokeWidth="1.4"/>
-  {/* Eyes */}
   <ellipse cx="24" cy="20" rx="2" ry="2.5" fill="#6A4B8A"/><circle cx="24.7" cy="19.3" r="0.8" fill="white"/>
   <ellipse cx="33" cy="20" rx="2" ry="2.5" fill="#6A4B8A"/><circle cx="33.7" cy="19.3" r="0.8" fill="white"/>
-  {/* Nose */}
   <ellipse cx="28.5" cy="25" rx="1.5" ry="1" fill="#DDA0DD"/>
   <path d="M26.5 27 Q28.5 29 30.5 27" stroke="#B0A0C0" strokeWidth="0.7" fill="none"/>
-  {/* Blush */}
   <ellipse cx="20" cy="25" rx="3" ry="1.5" fill="#FFB6C1" opacity="0.25"/>
   <ellipse cx="37" cy="25" rx="3" ry="1.5" fill="#FFB6C1" opacity="0.25"/>
-  {/* Tail (rainbow) */}
   <path d="M43 22 Q50 16 48 10" stroke="#FF6B6B" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6"/>
   <path d="M44 22 Q51 17 49 11" stroke="#87CEEB" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6"/>
   <path d="M45 23 Q52 18 50 12" stroke="#DDA0DD" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6"/>
-  {/* Sparkle near horn */}
   <text x="32" y="6" fontSize="4" className="unicorn-sparkle">✨</text>
 </svg>);}
 
-// ── Config: speed, position, size, idle, accessory offset ───
-// accOffset = [translateX, translateY, scale] for hat positioning
+// ── Config: speed (px/s), position, size, idle, accessory offset ───
 const ANIMAL_CONFIG = {
-  cat:      { Comp: CatSVG,      speed: 18, bottom: 76, size: 42, idleClass: 'idle-groom',    accOffset: [11, -6, 0.9] },
-  bunny:    { Comp: BunnySVG,     speed: 14, bottom: 76, size: 40, idleClass: 'idle-binky',    accOffset: [10, -8, 0.85] },
-  dog:      { Comp: DogSVG,       speed: 15, bottom: 76, size: 44, idleClass: 'idle-wag',      accOffset: [12, -1, 0.9] },
-  turtle:   { Comp: TurtleSVG,    speed: 30, bottom: 76, size: 46, idleClass: 'idle-hide',     accOffset: [33, 6, 0.7] },
-  fox:      { Comp: FoxSVG,       speed: 12, bottom: 76, size: 42, idleClass: 'idle-pounce',   accOffset: [12, -2, 0.9] },
-  owl:      { Comp: OwlSVG,       speed: 20, bottom: 160, size: 38, idleClass: 'idle-headspin', accOffset: [10, -4, 0.85] },
-  penguin:  { Comp: PenguinSVG,   speed: 22, bottom: 76, size: 36, idleClass: 'idle-slide',    accOffset: [9, -1, 0.8] },
-  redpanda: { Comp: RedPandaSVG,  speed: 16, bottom: 76, size: 44, idleClass: 'idle-standup',  accOffset: [12, -4, 0.85] },
-  hedgehog: { Comp: HedgehogSVG,  speed: 24, bottom: 76, size: 40, idleClass: 'idle-curl',     accOffset: [26, 6, 0.7] },
-  dragon:   { Comp: DragonSVG,    speed: 14, bottom: 200, size: 50, idleClass: 'idle-breathe',  accOffset: [16, -2, 0.9] },
-  unicorn:  { Comp: UnicornSVG,   speed: 16, bottom: 120, size: 48, idleClass: 'idle-rear',    accOffset: [18, -4, 0.8] },
+  cat:      { Comp: CatSVG,      speed: 40, bottom: 76, size: 80, idleClass: 'idle-groom',    accOffset: [11, -6, 0.9] },
+  bunny:    { Comp: BunnySVG,     speed: 55, bottom: 76, size: 40, idleClass: 'idle-binky',    accOffset: [10, -8, 0.85] },
+  dog:      { Comp: DogSVG,       speed: 50, bottom: 76, size: 44, idleClass: 'idle-wag',      accOffset: [12, -1, 0.9] },
+  turtle:   { Comp: TurtleSVG,    speed: 20, bottom: 76, size: 46, idleClass: 'idle-hide',     accOffset: [33, 6, 0.7] },
+  fox:      { Comp: FoxSVG,       speed: 65, bottom: 76, size: 42, idleClass: 'idle-pounce',   accOffset: [12, -2, 0.9] },
+  owl:      { Comp: OwlSVG,       speed: 35, bottom: 160, size: 38, idleClass: 'idle-headspin', accOffset: [10, -4, 0.85] },
+  penguin:  { Comp: PenguinSVG,   speed: 30, bottom: 76, size: 36, idleClass: 'idle-slide',    accOffset: [9, -1, 0.8] },
+  redpanda: { Comp: RedPandaSVG,  speed: 45, bottom: 76, size: 44, idleClass: 'idle-standup',  accOffset: [12, -4, 0.85] },
+  hedgehog: { Comp: HedgehogSVG,  speed: 28, bottom: 76, size: 40, idleClass: 'idle-curl',     accOffset: [26, 6, 0.7] },
+  dragon:   { Comp: DragonSVG,    speed: 55, bottom: 200, size: 50, idleClass: 'idle-breathe',  accOffset: [16, -2, 0.9] },
+  unicorn:  { Comp: UnicornSVG,   speed: 48, bottom: 120, size: 48, idleClass: 'idle-rear',    accOffset: [18, -4, 0.8] },
 };
 
+// ── JS-driven animal with variable speed + pauses ───────────
+function AnimalSprite({ animalId, config, accessory, staggerIndex }) {
+  const posRef = useRef(null);
+  const elRef = useRef(null);
+  const stateRef = useRef(null);
+  const rafRef = useRef(null);
+  const lastTimeRef = useRef(null);
+
+  // Init state once
+  if (!stateRef.current) {
+    stateRef.current = {
+      x: -(config.size + staggerIndex * 150 + Math.random() * 100),
+      speed: config.speed,
+      paused: false,
+      pauseTimer: 0,
+      nextPauseAt: 300 + Math.random() * 400,
+      speedVariation: 0.7 + Math.random() * 0.6,
+    };
+  }
+
+  useEffect(() => {
+    const screenW = () => typeof window !== 'undefined' ? window.innerWidth : 400;
+
+    const tick = (time) => {
+      if (!lastTimeRef.current) lastTimeRef.current = time;
+      const dt = Math.min((time - lastTimeRef.current) / 1000, 0.1);
+      lastTimeRef.current = time;
+      const s = stateRef.current;
+
+      if (s.paused) {
+        s.pauseTimer -= dt;
+        if (s.pauseTimer <= 0) {
+          s.paused = false;
+          s.speedVariation = 0.7 + Math.random() * 0.6;
+          // Next pause somewhere ahead
+          s.nextPauseAt = s.x + screenW() * (0.2 + Math.random() * 0.5);
+          if (posRef.current) posRef.current.classList.remove('animal-paused');
+        }
+      } else {
+        s.x += s.speed * s.speedVariation * dt;
+
+        // Should we pause? Only if still on screen
+        if (s.x >= s.nextPauseAt && s.x < screenW() - config.size) {
+          s.paused = true;
+          s.pauseTimer = 1.5 + Math.random() * 3;
+          if (posRef.current) posRef.current.classList.add('animal-paused');
+        }
+
+        // Wrap around off right edge
+        if (s.x > screenW() + config.size + 20) {
+          s.x = -config.size - 20 - Math.random() * 60;
+          s.speedVariation = 0.7 + Math.random() * 0.6;
+          s.nextPauseAt = screenW() * (0.15 + Math.random() * 0.7);
+        }
+      }
+
+      if (posRef.current) {
+        posRef.current.style.transform = `translateX(${s.x}px)`;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [config.size, config.speed]);
+
+  const { Comp, bottom, size, idleClass, accOffset } = config;
+  return (
+    <div ref={posRef} className={`parade-animal-js ${idleClass}`}
+      style={{ bottom: `${bottom}px`, width: size, height: size }}>
+      <div className="parade-hop">
+        <div ref={elRef} className="parade-animal-inner">
+          <Comp acc={accessory} ao={accOffset}/>
+        </div>
+      </div>
+      <div className="parade-shadow" style={{ width: size * 0.6 }}/>
+    </div>
+  );
+}
+
+// ── Main component — renders once in layout, persists across pages ──
 export default function AnimalParade() {
+  const pathname = usePathname();
   const [animals, setAnimals] = useState([]);
   const [accessories, setAccessories] = useState({});
 
@@ -95,9 +204,7 @@ export default function AnimalParade() {
       const allAcc = COSMETIC_POOLS.meepleAccessory;
       Object.entries(eq.animalAccessories).forEach(([animalId, cosmeticId]) => {
         if (!cosmeticId) return;
-        // cosmeticId is the battle pass reward ID like 'meeple_crown_b0'
-        // We need the accessory name like 'crown'
-        const reward = require('@/lib/battlePass').ALL_REWARDS.find(r => r.cosmeticId === cosmeticId);
+        const reward = ALL_REWARDS.find(r => r.cosmeticId === cosmeticId);
         if (reward) {
           const pool = allAcc.find(p => p.id === reward.cosmeticRef);
           if (pool) accMap[animalId] = pool.accessory;
@@ -107,21 +214,15 @@ export default function AnimalParade() {
     setAccessories(accMap);
   }, []);
 
-  if (!animals.length) return null;
+  if (!animals.length || pathname === '/first-player') return null;
   return (
     <div className="animal-parade" aria-hidden="true">
       {animals.map((animal, i) => {
         const config = ANIMAL_CONFIG[animal.id];
         if (!config) return null;
-        const { Comp, speed, bottom, size, idleClass, accOffset } = config;
-        const delay = (i * 3.7) % speed;
-        const acc = accessories[animal.id] || null;
         return (
-          <div key={animal.id} className={`parade-animal ${idleClass}`}
-            style={{ bottom:`${bottom}px`, animationDuration:`${speed}s`, animationDelay:`-${delay}s`, width:size, height:size }}>
-            <div className="parade-animal-inner"><Comp acc={acc} ao={accOffset}/></div>
-            <div className="parade-shadow" style={{ width: size * 0.6 }}/>
-          </div>
+          <AnimalSprite key={animal.id} animalId={animal.id} config={config}
+            accessory={accessories[animal.id] || null} staggerIndex={i}/>
         );
       })}
     </div>

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import FloatingHearts from '@/components/FloatingHearts';
-import AnimalParade from '@/components/AnimalParade';
+
 import BottomNav from '@/components/BottomNav';
 import { useCosmetics } from '@/lib/cosmeticEngine';
 import { getBattlePassState, getLevelFromXP, ALL_REWARDS, getRewardsForBlock, getBlockForLevel, redeemReward, getNextReward, getCurrentTitle, getAllCosmeticsForCategory, getEquippedCosmetics, equipCosmetic, unequipCosmetic } from '@/lib/battlePass';
@@ -37,7 +37,7 @@ export default function RewardsPage() {
   return (
     <>
       <FloatingHearts color={cosmetics?.heartColor}/>
-      <AnimalParade/>
+      
       <div className="main-content page-enter" style={{overflow:'auto',...bgStyle}}>
         <div className="rewards-container">
           <h1 style={{fontFamily:'Caveat,cursive',fontSize:'1.8rem',color:'var(--berry)',paddingTop:6}}>🏆 Rewards</h1>

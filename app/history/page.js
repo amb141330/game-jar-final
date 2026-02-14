@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import FloatingHearts from '@/components/FloatingHearts';
-import AnimalParade from '@/components/AnimalParade';
+
 import BottomNav from '@/components/BottomNav';
 import { useCosmetics } from '@/lib/cosmeticEngine';
 import { getBattlePassState, getLevelFromXP } from '@/lib/battlePass';
@@ -22,7 +22,7 @@ export default function HistoryPage() {
   const bgStyle = cosmetics?.bgFrom ? { background: `linear-gradient(180deg, ${cosmetics.bgFrom}, ${cosmetics.bgTo})` } : {};
 
   if (!stats) return (
-    <><FloatingHearts color={cosmetics?.heartColor}/><AnimalParade/>
+    <><FloatingHearts color={cosmetics?.heartColor}/>
       <div className="main-content page-enter" style={bgStyle}>
         <div className="history-container" style={{paddingTop:20,textAlign:'center'}}>
           <h1 style={{fontFamily:'Caveat,cursive',fontSize:'1.8rem',color:'var(--berry)'}}>📊 History</h1>
@@ -40,7 +40,7 @@ export default function HistoryPage() {
   const maxMonth = Math.max(...stats.months.map(m => m.count), 1);
 
   return (
-    <><FloatingHearts color={cosmetics?.heartColor}/><AnimalParade/>
+    <><FloatingHearts color={cosmetics?.heartColor}/>
       <div className="main-content page-enter" style={{overflow:'auto',...bgStyle}}>
         <div className="history-container">
           <h1 style={{fontFamily:'Caveat,cursive',fontSize:'1.8rem',color:'var(--berry)',paddingTop:6}}>📊 History</h1>
